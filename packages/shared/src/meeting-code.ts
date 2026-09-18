@@ -37,6 +37,11 @@ export function normalizeMeetingCode(input: string): string | null {
 }
 
 export function formatMeetingCode(normalized: string): string {
+  const parts: string[] = []
   let at = 0
-  return GROUPS.map((size) => normalized.slice(at, (at += size))).join('-')
+  for (const size of GROUPS) {
+    parts.push(normalized.slice(at, at + size))
+    at += size
+  }
+  return parts.join('-')
 }
