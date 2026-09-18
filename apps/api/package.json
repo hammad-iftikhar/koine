@@ -11,5 +11,8 @@
     "@koine/shared": "workspace:*",
     "fastify": "^5.0.0"
   },
-  "devDependencies": { "tsx": "^4.19.0", "vitest": "^2.1.0" }
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "vitest": "^2.1.0"
+  }
 }

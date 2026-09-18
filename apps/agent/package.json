@@ -7,6 +7,11 @@
     "dev": "tsx watch src/main.ts",
     "test": "vitest run --passWithNoTests"
   },
-  "dependencies": { "@koine/shared": "workspace:*" },
-  "devDependencies": { "tsx": "^4.19.0", "vitest": "^2.1.0" }
+  "dependencies": {
+    "@koine/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "vitest": "^2.1.0"
+  }
 }
