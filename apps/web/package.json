@@ -30,7 +30,6 @@
     "vite": "^5.4.0",
     "vitest": "^3.0.0",
     "@vitest/browser": "3.2.7",
-    "@vitest/coverage-v8": "3.2.7",
-    "playwright": "latest"
+    "playwright": "^1.63.0"
   }
 }
