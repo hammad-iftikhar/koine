@@ -1,0 +1,29 @@
+:root {
+  /* Ground. Flat black, no gradient. */
+  --ink: #000000;
+
+  /* Floating surfaces. Glass is for things that sit over content. */
+  --pane: rgba(255, 255, 255, 0.07);
+  --pane-2: rgba(255, 255, 255, 0.11);
+  --edge: rgba(255, 255, 255, 0.12);
+  --edge-top: rgba(255, 255, 255, 0.22);
+  --well: rgba(0, 0, 0, 0.34);
+
+  /* Text */
+  --fg: #f5f5f7;
+  --fg-2: #a1a1aa;
+  --fg-3: #6e6e76;
+
+  /* Three states, three colours, no overlap.
+     blue  = active / you
+     red   = off or out
+     amber = degraded
+     green = connected confirmation only */
+  --blue: #0a84ff;
+  --red: #ff453a;
+  --green: #30d158;
+  --amber: #ff9f0a;
+
+  --blur: blur(28px) saturate(180%);
+  --lift: 0 18px 44px -22px rgba(0, 0, 0, 0.9);
+}
