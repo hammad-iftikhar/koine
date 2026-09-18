@@ -1,0 +1,95 @@
+name: koine
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: koine
+      POSTGRES_PASSWORD: koine
+      POSTGRES_DB: koine
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U koine -d koine"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    # No persistence in dev: Redis holds counters and coordination, never truth.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  livekit:
+    image: livekit/livekit-server:v1.8
+    command: ["--config", "/etc/livekit.yaml"]
+    volumes: ["./docker/livekit.dev.yaml:/etc/livekit.yaml:ro"]
+    ports:
+      - "7880:7880"        # signalling (HTTP/WS)
+      - "7881:7881"        # WebRTC over TCP, fallback
+      - "7882:7882/udp"    # single-port UDP mux
+    depends_on:
+      redis: { condition: service_healthy }
+
+  api:
+    profiles: ["apps"]
+    build: { context: ., dockerfile: docker/Dockerfile.dev }
+    command: ["pnpm", "--filter", "@koine/api", "dev"]
+    environment:
+      DATABASE_URL: postgres://koine:koine@postgres:5432/koine
+      REDIS_URL: redis://redis:6379
+      LIVEKIT_URL: ws://livekit:7880
+      LIVEKIT_API_KEY: devkey
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      GUEST_TOKEN_SECRET: ${GUEST_TOKEN_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports: ["3000:3000"]
+    volumes: &src
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/node_modules
+      - /app/apps/agent/node_modules
+      - /app/apps/web/node_modules
+      - /app/packages/shared/node_modules
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  agent:
+    profiles: ["apps"]
+    build: { context: ., dockerfile: docker/Dockerfile.dev }
+    command: ["pnpm", "--filter", "@koine/agent", "dev"]
+    environment:
+      DATABASE_URL: postgres://koine:koine@postgres:5432/koine
+      REDIS_URL: redis://redis:6379
+      LIVEKIT_URL: ws://livekit:7880
+      LIVEKIT_API_KEY: devkey
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    volumes: *src
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  web:
+    profiles: ["apps"]
+    build: { context: ., dockerfile: docker/Dockerfile.dev }
+    command: ["pnpm", "--filter", "@koine/web", "dev", "--host", "0.0.0.0"]
+    environment:
+      VITE_API_URL: http://localhost:3000
+      # The browser reaches LiveKit from the host, not the compose network.
+      VITE_LIVEKIT_URL: ws://localhost:7880
+    ports: ["5173:5173"]
+    volumes: *src
+
+volumes:
+  pgdata:
