@@ -20,4 +20,9 @@ it('reports healthy', async () => {
 it('returns a structured 404 for an unknown route', async () => {
   const res = await app.inject({ method: 'GET', url: '/nope' })
   expect(res.statusCode).toBe(404)
+  expect(res.json()).toMatchObject({
+    statusCode: 404,
+    error: expect.any(String),
+    message: expect.any(String),
+  })
 })
