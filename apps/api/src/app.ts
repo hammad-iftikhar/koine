@@ -1,12 +1,21 @@
 import cors from '@fastify/cors'
 import Fastify, { type FastifyInstance } from 'fastify'
-import { auth, toHeaders } from './auth'
+import { auth as defaultAuth, toHeaders } from './auth'
 import { webOrigins } from './origins'
 import { healthRoutes } from './routes/health'
 import { meRoutes } from './routes/me'
 
-/** Builds the app without listening, so tests can use app.inject(). */
-export async function buildApp(): Promise<FastifyInstance> {
+/**
+ * Builds the app without listening, so tests can use app.inject().
+ *
+ * `auth` defaults to the module singleton (bound to the shared DATABASE_URL
+ * database) so server.ts and every other caller are unaffected. Tests that
+ * drive /api/auth/* pass one from createAuth(withTestDb().db) instead, so
+ * they exercise an isolated database rather than writing into the shared one.
+ */
+export async function buildApp(
+  auth: Pick<typeof defaultAuth, 'handler'> = defaultAuth,
+): Promise<FastifyInstance> {
   const app = Fastify({ logger: false })
 
   // Explicit allow-list, never `*` or a reflect-any-origin function: combined

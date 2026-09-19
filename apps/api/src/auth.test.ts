@@ -1,14 +1,22 @@
 import { afterAll, beforeAll, expect, it, vi } from 'vitest'
 import { buildApp } from './app'
+import { createAuth } from './auth'
+import { withTestDb } from './test/db'
 
 let app: Awaited<ReturnType<typeof buildApp>>
+let testDb: Awaited<ReturnType<typeof withTestDb>>
 
 beforeAll(async () => {
-  app = await buildApp()
+  // An isolated database, not the shared DATABASE_URL one: this suite writes
+  // OAuth state to the `verification` table on every sign-in attempt, and a
+  // never-migrated database (as CI's `koine` service is) would 500 here.
+  testDb = await withTestDb()
+  app = await buildApp(createAuth(testDb.db))
   await app.ready()
 })
 afterAll(async () => {
-  await app.close()
+  await app?.close()
+  await testDb?.destroy()
 })
 
 const ALLOWED_ORIGIN = 'http://localhost:5173'

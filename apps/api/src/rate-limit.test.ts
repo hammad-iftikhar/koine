@@ -1,18 +1,27 @@
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { buildApp } from './app'
+import { createAuth } from './auth'
+import { withTestDb } from './test/db'
 
 // Its own file on purpose: Better Auth's default rate-limit storage is an
 // in-memory map, and vitest gives each test file its own process, so these
 // requests get a bucket that no other test has already spent.
 
 let app: Awaited<ReturnType<typeof buildApp>>
+let testDb: Awaited<ReturnType<typeof withTestDb>>
 
 beforeAll(async () => {
-  app = await buildApp()
+  // An isolated database: this test drives 11 sign-in attempts against the
+  // real /api/auth/* handler, each writing OAuth state to `verification`.
+  // Against the shared DATABASE_URL database that both 500s on a
+  // never-migrated (CI) database and leaves rows behind on every run.
+  testDb = await withTestDb()
+  app = await buildApp(createAuth(testDb.db))
   await app.ready()
 })
 afterAll(async () => {
-  await app.close()
+  await app?.close()
+  await testDb?.destroy()
 })
 
 // Matches the customRules entry in auth.ts.
