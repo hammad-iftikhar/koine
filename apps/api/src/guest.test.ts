@@ -1,12 +1,14 @@
 import { beforeAll, expect, it } from 'vitest'
-import { signGuestToken, verifyGuestToken } from './guest'
+import { type GuestClaims, signGuestToken, verifyGuestToken } from './guest'
 
+// `satisfies`, not a bare literal: without it TypeScript widens 'es'/'en' to
+// string and every signGuestToken(claims) call fails to typecheck.
 const claims = {
   meetingCode: 'kxvnvradwq',
   displayName: 'Mariam',
   speakLang: 'es',
   hearLang: 'en',
-}
+} satisfies GuestClaims
 
 beforeAll(() => {
   process.env.GUEST_TOKEN_SECRET ??= 'test_guest_secret_at_least_32_characters'
