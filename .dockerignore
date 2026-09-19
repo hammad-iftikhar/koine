@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+.git
+.env
+.superpowers
+.pnpm-store
+dist
+**/dist
+storybook-static
+playwright-report
+test-results
+*.log
+.DS_Store

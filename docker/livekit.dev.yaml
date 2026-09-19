@@ -1,0 +1,22 @@
+# Development only. Production config is separate; see module 08.
+port: 7880
+bind_addresses: ["0.0.0.0"]
+log_level: info
+
+rtc:
+  tcp_port: 7881
+  udp_port: 7882          # single mux port; see the note above
+  node_ip: "127.0.0.1"    # change to the host LAN IP to test from another device
+  use_external_ip: false
+
+redis:
+  address: redis:6379
+
+# Dev credentials. Production keys are generated per environment and never
+# committed. LiveKit requires a secret of at least 32 characters.
+keys:
+  devkey: devsecret_change_me_at_least_32_chars
+
+# No TURN locally: loopback needs no relay. Production enables it (module 05).
+turn:
+  enabled: false
