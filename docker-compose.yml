@@ -57,6 +57,10 @@ services:
       LIVEKIT_API_KEY: devkey
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      # The API's own public URL. Better Auth builds the Google redirect_uri
+      # from it (<base>/api/auth/callback/google); left unset it guesses from
+      # the incoming request and warns on every boot.
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
       GUEST_TOKEN_SECRET: ${GUEST_TOKEN_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}

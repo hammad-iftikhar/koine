@@ -23,6 +23,12 @@ export async function buildApp(): Promise<FastifyInstance> {
     // a request body round-trips to something a different size.
     headers.delete('content-length')
     headers.delete('content-encoding')
+    // Better Auth reads the client IP from x-forwarded-for, and this handler
+    // hands it a Request built from scratch with no connection behind it.
+    // Without this line every caller shares one rate-limit bucket, so a
+    // single attacker locks everyone out of sign-in. set() overwrites rather
+    // than appends, so a client cannot spoof its way into a fresh bucket.
+    headers.set('x-forwarded-for', request.ip)
 
     const response = await auth.handler(
       new Request(url, {
