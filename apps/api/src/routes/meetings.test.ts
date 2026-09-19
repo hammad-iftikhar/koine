@@ -1,10 +1,17 @@
 import { formatMeetingCode } from '@koine/shared'
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { buildApp } from '../app'
 import { db } from '../db/client'
-import { participant, user } from '../db/schema'
+import { meeting, participant, user } from '../db/schema'
+import * as livekit from '../livekit'
+import * as rateLimit from '../rate-limit'
 import { redis } from '../redis'
+
+function claims(jwt: string): Record<string, unknown> {
+  const payload = jwt.split('.')[1] as string
+  return JSON.parse(Buffer.from(payload, 'base64url').toString())
+}
 
 let app: Awaited<ReturnType<typeof buildApp>>
 
@@ -38,14 +45,17 @@ afterAll(async () => {
   await redis.quit()
 })
 
-async function createMeeting() {
+async function createMeeting(headers: Record<string, string> = { 'x-test-user': 'u_host' }) {
   const res = await app.inject({
     method: 'POST',
     url: '/api/meetings',
     payload: { floorLang: 'en' },
-    headers: { 'x-test-user': 'u_host' },
+    headers,
   })
-  return res.json() as { code: string }
+  const { code } = res.json() as { code: string }
+  const [row] = await db.select({ id: meeting.id }).from(meeting).where(eq(meeting.code, code))
+  if (!row) throw new Error(`meeting ${code} was not created`)
+  return { code, id: row.id }
 }
 
 it('creates a meeting with a valid code', async () => {
@@ -92,7 +102,7 @@ it('answers a malformed code with 404, not a crash', async () => {
 })
 
 it('mints a token and records the languages on join', async () => {
-  const { code } = await createMeeting()
+  const { code, id } = await createMeeting()
   const res = await app.inject({
     method: 'POST',
     url: `/api/meetings/${code}/join`,
@@ -105,6 +115,14 @@ it('mints a token and records the languages on join', async () => {
   // A guest gets a scoped token; the languages must be on the row, because
   // plan 06 rebuilds the channel set from the database, not from clients.
   expect(body.guestToken).toBeTruthy()
+
+  // The route, not just mintAccessToken, is what chooses the room: R22
+  // requires the meeting's id, never the code, so this pins that choice at
+  // the level that could actually get it wrong.
+  const tokenClaims = claims(body.livekitToken)
+  const video = tokenClaims.video as Record<string, unknown>
+  expect(video.room).toBe(id)
+  expect(tokenClaims.sub).toBe(body.participantId)
 
   const detail = await app.inject({ method: 'GET', url: `/api/meetings/${code}` })
   expect(detail.json().participants).toHaveLength(1)
@@ -176,7 +194,10 @@ it('rate limits code lookups', async () => {
 it('rate limits joins in their own bucket, separate from lookups', async () => {
   const { code } = await createMeeting()
 
-  for (let i = 0; i < 10; i++) {
+  // Join's bucket (30/60s) is larger than lookup's (10/60s) so a shared
+  // office NAT with a dozen colleagues joining their own meeting is not
+  // mistaken for code-guessing.
+  for (let i = 0; i < 30; i++) {
     const res = await app.inject({
       method: 'POST',
       url: `/api/meetings/${code}/join`,
@@ -194,7 +215,7 @@ it('rate limits joins in their own bucket, separate from lookups', async () => {
   expect(blocked.json().message).toMatch(/wait a moment/i)
 
   // Proves join and lookup are separate buckets, not one shared counter:
-  // 11 straight joins from this IP have not touched the lookup limiter.
+  // 31 straight joins from this IP have not touched the lookup limiter.
   const lookup = await app.inject({ method: 'GET', url: `/api/meetings/${code}` })
   expect(lookup.statusCode).toBe(200)
 })
@@ -251,4 +272,58 @@ it('leaving marks the row and drops it from the roster', async () => {
 
   const detail = await app.inject({ method: 'GET', url: `/api/meetings/${code}` })
   expect(detail.json().participants).toHaveLength(0)
+})
+
+it('reports an unknown code on join as 404 without touching LiveKit', async () => {
+  const mintSpy = vi.spyOn(livekit, 'mintAccessToken')
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/api/meetings/aaaaaaaaaa/join',
+    payload: { displayName: 'X', speakLang: 'en', hearLang: 'en' },
+  })
+
+  expect(res.statusCode).toBe(404)
+  expect(res.json().message).toMatch(/check the code or ask the host for the link/i)
+  expect(mintSpy).not.toHaveBeenCalled()
+
+  mintSpy.mockRestore()
+})
+
+it('records a signed-in host joining their own meeting as role: host with no guest token', async () => {
+  const { code } = await createMeeting()
+
+  const res = await app.inject({
+    method: 'POST',
+    url: `/api/meetings/${code}/join`,
+    payload: { displayName: 'Host', speakLang: 'en', hearLang: 'en' },
+    headers: { 'x-test-user': 'u_host' },
+  })
+
+  expect(res.statusCode).toBe(200)
+  const body = res.json()
+  // If the host comparison ever broke, every participant would come back a
+  // guest and plan 05's host controls would have nothing to key off.
+  expect(body.guestToken).toBeNull()
+
+  const [row] = await db
+    .select({ role: participant.role })
+    .from(participant)
+    .where(eq(participant.id, body.participantId))
+  expect(row?.role).toBe('host')
+})
+
+it('lets requests through when the rate limiter itself fails', async () => {
+  // R24: the limiter fails open. A Redis fault must not 500 every meeting
+  // route — the meeting code's entropy is the primary defence, the limiter
+  // is secondary. `consume` still throws on a real Redis error (see
+  // rate-limit.test.ts); what changes here is that the route catches it.
+  const consumeSpy = vi.spyOn(rateLimit, 'consume').mockRejectedValueOnce(new Error('boom'))
+
+  const res = await app.inject({ method: 'GET', url: '/api/meetings/aaaaaaaaaa' })
+
+  expect(res.statusCode).toBe(404)
+  expect(res.json().message).toMatch(/check the code or ask the host for the link/i)
+
+  consumeSpy.mockRestore()
 })

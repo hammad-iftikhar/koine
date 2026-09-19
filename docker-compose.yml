@@ -54,6 +54,10 @@ services:
       DATABASE_URL: postgres://koine:koine@postgres:5432/koine
       REDIS_URL: redis://redis:6379
       LIVEKIT_URL: ws://livekit:7880
+      # The browser-reachable LiveKit URL, returned to clients in the join
+      # response. Distinct from LIVEKIT_URL above, which the API uses to
+      # reach LiveKit over the compose network.
+      LIVEKIT_PUBLIC_URL: ${LIVEKIT_PUBLIC_URL:-ws://localhost:7880}
       LIVEKIT_API_KEY: devkey
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}

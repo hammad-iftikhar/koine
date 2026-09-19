@@ -14,10 +14,35 @@ import { signGuestToken } from '../guest'
 import { mintAccessToken } from '../livekit'
 import { consume } from '../rate-limit'
 
+// Lookup is unauthenticated code-guessing surface, so it stays tight — the
+// spec's test list names the eleventh lookup from one IP specifically.
 const LOOKUP_LIMIT = 10
 const LOOKUP_WINDOW = 60
 
+// Join and end share a separate, larger bucket: a shared office NAT can put
+// a dozen legitimate colleagues behind one IP, and the tenth-plus person
+// joining or ending their own meeting is not the code-guessing attack this
+// defends against.
+const ACTION_LIMIT = 30
+const ACTION_WINDOW = 60
+
 const MEETING_NOT_FOUND = 'Meeting code not found — check the code or ask the host for the link.'
+
+/**
+ * R25: `livekitUrl` stays in the join response — plan 05 consumes it — but a
+ * silent `ws://localhost:7880` default in production is a broken call
+ * nobody can debug from the client side. Dev keeps the default; production
+ * must set the browser-reachable URL explicitly or fail loudly at request
+ * time instead of minting a token nobody can connect with.
+ */
+function livekitPublicUrl(): string {
+  const url = process.env.LIVEKIT_PUBLIC_URL
+  if (url) return url
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('LIVEKIT_PUBLIC_URL must be set in production')
+  }
+  return 'ws://localhost:7880'
+}
 
 async function currentUserId(request: FastifyRequest): Promise<string | null> {
   // Test seam: skips the OAuth round trip. Never honoured outside tests.
@@ -34,9 +59,27 @@ async function currentUserId(request: FastifyRequest): Promise<string | null> {
  * an unauthenticated caller: lookup, join and end all leak whether a code
  * exists (join by inserting, end by 404-vs-403), so all three are throttled
  * per IP, each in its own bucket.
+ *
+ * R24: the limiter fails OPEN. The meeting code is the primary defence here
+ * and is entropy nobody can guess in ten years; the limiter is a secondary
+ * belt-and-braces check. A Redis blip must not stop people joining calls, so
+ * a failure from `consume` is logged and the request is let through rather
+ * than turning an infrastructure fault into a 500 for every meeting route.
  */
-async function enforceRateLimit(request: FastifyRequest, reply: FastifyReply, bucket: string) {
-  const { allowed } = await consume(`${bucket}:${request.ip}`, LOOKUP_LIMIT, LOOKUP_WINDOW)
+async function enforceRateLimit(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  bucket: string,
+  limit: number,
+  windowSeconds: number,
+) {
+  let allowed: boolean
+  try {
+    ;({ allowed } = await consume(`${bucket}:${request.ip}`, limit, windowSeconds))
+  } catch (error) {
+    request.log.warn({ error, bucket }, 'rate limiter unavailable, allowing request through')
+    return true
+  }
   if (!allowed)
     reply.status(429).send({ message: 'Too many attempts — wait a moment and try again.' })
   return allowed
@@ -71,7 +114,8 @@ export async function meetingRoutes(app: FastifyInstance) {
   })
 
   app.get<{ Params: { code: string } }>('/api/meetings/:code', async (request, reply) => {
-    if (!(await enforceRateLimit(request, reply, 'lookup'))) return reply
+    if (!(await enforceRateLimit(request, reply, 'lookup', LOOKUP_LIMIT, LOOKUP_WINDOW)))
+      return reply
 
     const code = normalizeMeetingCode(request.params.code)
     if (!code) {
@@ -98,7 +142,7 @@ export async function meetingRoutes(app: FastifyInstance) {
   })
 
   app.post<{ Params: { code: string } }>('/api/meetings/:code/join', async (request, reply) => {
-    if (!(await enforceRateLimit(request, reply, 'join'))) return reply
+    if (!(await enforceRateLimit(request, reply, 'join', ACTION_LIMIT, ACTION_WINDOW))) return reply
 
     const code = normalizeMeetingCode(request.params.code)
     if (!code) {
@@ -126,8 +170,14 @@ export async function meetingRoutes(app: FastifyInstance) {
     // Minted before the insert: a LiveKit failure here must not leave a
     // phantom participant row (leftAt: null forever) in the roster and the
     // meeting marked started for a person who never actually joined.
+    //
+    // R22: room is deliberately the meeting's id, not its code. The code is
+    // this system's only credential and it never rotates, while room names
+    // reach LiveKit's server logs, webhooks, metrics labels and dashboard —
+    // pinning the room to the code would leak a permanent join credential
+    // into every observability surface. Do not "fix" this back to `code`.
     const livekitToken = await mintAccessToken({
-      room: code,
+      room: found.id,
       identity: participantId,
       name: parsed.data.displayName,
     })
@@ -148,7 +198,7 @@ export async function meetingRoutes(app: FastifyInstance) {
 
     return {
       livekitToken,
-      livekitUrl: process.env.LIVEKIT_PUBLIC_URL ?? 'ws://localhost:7880',
+      livekitUrl: livekitPublicUrl(),
       identity: participantId,
       participantId,
       guestToken: userId
@@ -198,7 +248,7 @@ export async function meetingRoutes(app: FastifyInstance) {
   )
 
   app.post<{ Params: { code: string } }>('/api/meetings/:code/end', async (request, reply) => {
-    if (!(await enforceRateLimit(request, reply, 'end'))) return reply
+    if (!(await enforceRateLimit(request, reply, 'end', ACTION_LIMIT, ACTION_WINDOW))) return reply
 
     const code = normalizeMeetingCode(request.params.code)
     if (!code) return reply.status(404).send({ message: MEETING_NOT_FOUND })
