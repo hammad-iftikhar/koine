@@ -13,8 +13,10 @@
   },
   "dependencies": {
     "@koine/shared": "workspace:*",
+    "@livekit/components-react": "^2.9.24",
     "@tanstack/react-query": "^5.103.1",
     "clsx": "^2.1.1",
+    "livekit-client": "^2.22.3",
     "lucide-react": "^1.47.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
