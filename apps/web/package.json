@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@koine/shared": "workspace:*",
+    "@tanstack/react-query": "^5.103.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.47.0",
     "react": "^19.0.0",

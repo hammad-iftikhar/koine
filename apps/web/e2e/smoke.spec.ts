@@ -36,3 +36,9 @@ test('fake media devices are available to two independent contexts', async ({ br
     await bob.close()
   }
 })
+
+test('a visitor who is not signed in sees a sign-in button, not an error', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByTestId('sign-in')).toBeVisible()
+  await expect(page.getByTestId('signed-in')).toHaveCount(0)
+})
