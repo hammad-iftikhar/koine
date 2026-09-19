@@ -1,8 +1,17 @@
 import { useConnectionState } from '@livekit/components-react'
 import { ConnectionState } from 'livekit-client'
+import { useEffect, useState } from 'react'
 
 export function ConnectionBanner() {
   const state = useConnectionState()
+  // A room that has not connected yet reports Disconnected, the same value it
+  // reports after giving up — so without this the terminal copy flashes on
+  // every join. "Disconnected" is only true once there was a connection.
+  const [joined, setJoined] = useState(false)
+  useEffect(() => {
+    if (state === ConnectionState.Connected) setJoined(true)
+  }, [state])
+
   if (state === ConnectionState.Connected) return null
 
   // An empty grid with no explanation is how a reconnect looks like a crash.
@@ -13,9 +22,9 @@ export function ConnectionBanner() {
   const message =
     state === ConnectionState.Reconnecting || state === ConnectionState.SignalReconnecting
       ? 'Reconnecting…'
-      : state === ConnectionState.Connecting
-        ? 'Joining the meeting…'
-        : 'You have been disconnected. Rejoin from the meeting link.'
+      : joined
+        ? 'You have been disconnected. Rejoin from the meeting link.'
+        : 'Joining the meeting…'
 
   return (
     <div

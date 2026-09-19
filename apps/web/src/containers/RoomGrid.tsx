@@ -28,7 +28,10 @@ export function RoomGrid() {
   const entries: GridEntry[] = participants.map((p) => ({
     identity: p.identity,
     name: p.name || p.identity,
-    speaking: p.isSpeaking,
+    // A muted participant is never shown as speaking, and ordering has to obey
+    // the same rule the tile does — otherwise a stale speaking flag on someone
+    // muted wins slot 0 while their tile correctly refuses to look like it.
+    speaking: p.isSpeaking && p.isMicrophoneEnabled,
     isSelf: p.identity === localParticipant.identity,
   }))
 
@@ -41,6 +44,15 @@ export function RoomGrid() {
 
   const mutedFor = (identity: string) =>
     !participants.find((p) => p.identity === identity)?.isMicrophoneEnabled
+
+  // Not `!streamFor(identity)`: turning the camera off mutes the track, it does
+  // not unpublish it, so the publication and its MediaStream survive and the
+  // tile would keep showing the last frame the track produced before mute
+  // stopped it. `isCameraEnabled` is `!(pub?.isMuted ?? true)`, exactly the
+  // shape `mutedFor` uses above — so a participant with no camera publication
+  // at all also reads as camera-off, which is what we want to draw.
+  const cameraOffFor = (identity: string) =>
+    !participants.find((p) => p.identity === identity)?.isCameraEnabled
 
   return (
     <div className="grid h-full min-h-0 w-full gap-2.5 md:grid-cols-2">
@@ -59,7 +71,7 @@ export function RoomGrid() {
           name={entry.name}
           speaking={entry.speaking}
           muted={mutedFor(entry.identity)}
-          cameraOff={!streamFor(entry.identity)}
+          cameraOff={cameraOffFor(entry.identity)}
           stream={streamFor(entry.identity)}
           isSelf={entry.isSelf}
         />

@@ -14,9 +14,16 @@ export async function applyCameraState(room: Room | undefined, on: boolean): Pro
 // of each keeping their own. There is no LiveKit room available up there, so
 // the room is threaded through at call time (from LocalControls, which is
 // inside <LiveKitRoom>) rather than bound once when the hook is constructed.
-export function useLocalDevices(initial = { mic: true, camera: true }) {
-  const [micOn, setMicOn] = useState(initial.mic)
-  const [cameraOn, setCameraOn] = useState(initial.camera)
+//
+// Both devices start on, with no seam to start them off: <LiveKitRoom> connects
+// with `audio video` and components-react enables the mic and camera on
+// SignalConnected regardless, so an `initial` parameter would be a decoy that
+// the next render overrides. The spec's "a user who joins muted stays muted"
+// needs pre-join to hand the connection its own device intent; that is real
+// follow-up work, not something to half-wire here.
+export function useLocalDevices() {
+  const [micOn, setMicOn] = useState(true)
+  const [cameraOn, setCameraOn] = useState(true)
 
   const toggleMic = useCallback(
     async (room: Room | undefined) => {

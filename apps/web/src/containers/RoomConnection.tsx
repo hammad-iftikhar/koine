@@ -27,13 +27,11 @@ export function RoomConnection({
   credentials,
   micOn,
   cameraOn,
-  onLeave,
   children,
 }: {
   credentials: JoinResponse
   micOn: boolean
   cameraOn: boolean
-  onLeave: () => void
   children: ReactNode
 }) {
   return (
@@ -43,7 +41,11 @@ export function RoomConnection({
       connect
       audio
       video
-      onDisconnected={onLeave}
+      // Deliberately no onDisconnected: routing a drop to onLeave navigates
+      // away, so ConnectionBanner's reconnecting and disconnected states could
+      // never render on a real drop and the user landed on the home page with
+      // no explanation. The explicit Leave button navigates on its own, through
+      // ControlBar's onLeave in LocalControls.
       options={{
         // Small tiles do not need full resolution, and on self-hosted
         // infrastructure the egress saving is ours to keep.

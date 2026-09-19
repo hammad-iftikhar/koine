@@ -67,3 +67,12 @@ export const TogglingMicCallsBack: Story = {
     await expect(args.onToggle).toHaveBeenCalledWith('mic')
   },
 }
+
+export const SomeoneElsePresenting: Story = {
+  args: { presentDisabled: true },
+  play: async ({ canvasElement }) => {
+    // Unavailable, and it says why — "Present now" greyed out explains nothing.
+    const btn = within(canvasElement).getByLabelText('Someone else is presenting')
+    await expect(btn).toBeDisabled()
+  },
+}

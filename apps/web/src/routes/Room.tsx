@@ -38,12 +38,7 @@ export function Room() {
   if (!parsed?.success) return <Navigate to={`/j/${code}`} replace />
 
   return (
-    <RoomConnection
-      credentials={parsed.data}
-      micOn={micOn}
-      cameraOn={cameraOn}
-      onLeave={() => navigate('/')}
-    >
+    <RoomConnection credentials={parsed.data} micOn={micOn} cameraOn={cameraOn}>
       <div className="grid h-dvh grid-rows-[1fr_auto] bg-ink">
         <div className="relative min-h-0 p-3">
           <ConnectionBanner />
