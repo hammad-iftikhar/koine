@@ -21,7 +21,8 @@ export function useLocalDevices(room: Room | undefined, initial = { mic: true, c
     try {
       await applyMicState(room, next)
     } catch {
-      setMicOn(!next)
+      // Only roll back if nothing newer has moved the switch since.
+      setMicOn((cur) => (cur === next ? !next : cur))
     }
   }, [room, micOn])
 
@@ -31,7 +32,8 @@ export function useLocalDevices(room: Room | undefined, initial = { mic: true, c
     try {
       await applyCameraState(room, next)
     } catch {
-      setCameraOn(!next)
+      // Only roll back if nothing newer has moved the switch since.
+      setCameraOn((cur) => (cur === next ? !next : cur))
     }
   }, [room, cameraOn])
 
