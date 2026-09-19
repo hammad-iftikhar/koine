@@ -1,20 +1,31 @@
 import { useLocalParticipant, useRoomContext } from '@livekit/components-react'
+import type { Room } from 'livekit-client'
 import { useState } from 'react'
 import { ControlBar } from '../components/ControlBar'
-import { useLocalDevices } from '../lib/useLocalDevices'
 
 export function LocalControls({
+  micOn,
+  cameraOn,
+  onToggleMic,
+  onToggleCamera,
   captions,
   onToggleCaptions,
   onLeave,
 }: {
+  micOn: boolean
+  cameraOn: boolean
+  // Room.tsx owns the mic/camera state (it is shared with RoomConnection's
+  // reconnect handler), but only this component — inside <LiveKitRoom> — has
+  // a real room to act on. So the toggle takes the room at call time instead
+  // of the hook binding it once outside the provider.
+  onToggleMic: (room: Room | undefined) => Promise<void>
+  onToggleCamera: (room: Room | undefined) => Promise<void>
   captions: boolean
   onToggleCaptions: () => void
   onLeave: () => void
 }) {
   const room = useRoomContext()
   const { localParticipant } = useLocalParticipant()
-  const { micOn, cameraOn, toggleMic, toggleCamera } = useLocalDevices(room)
   const [hand, setHand] = useState(false)
 
   const presenting = localParticipant.isScreenShareEnabled
@@ -27,8 +38,8 @@ export function LocalControls({
       hand={hand}
       presenting={presenting}
       onToggle={async (control) => {
-        if (control === 'mic') await toggleMic()
-        else if (control === 'camera') await toggleCamera()
+        if (control === 'mic') await onToggleMic(room)
+        else if (control === 'camera') await onToggleCamera(room)
         else if (control === 'captions') onToggleCaptions()
         else if (control === 'hand') setHand((h) => !h)
         else if (control === 'present') {

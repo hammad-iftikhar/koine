@@ -8,6 +8,7 @@ import { LocalControls } from '../containers/LocalControls'
 import { RoomConnection } from '../containers/RoomConnection'
 import { RoomGrid } from '../containers/RoomGrid'
 import { useElapsed } from '../lib/useElapsed'
+import { useLocalDevices } from '../lib/useLocalDevices'
 
 export function Room() {
   const { code = '' } = useParams()
@@ -15,6 +16,10 @@ export function Room() {
   const [panel, setPanel] = useState<PanelName | null>(null)
   const [captions, setCaptions] = useState(true)
   const elapsed = useElapsed()
+  // Lifted above <LiveKitRoom> so RoomConnection's reconnect handler and
+  // LocalControls read the exact same booleans — what the user last chose,
+  // never whatever the server happened to observe.
+  const { micOn, cameraOn, toggleMic, toggleCamera } = useLocalDevices()
 
   // Keyed by the normalized code, same as PreJoin writes it — a hyphenated
   // or uppercase code in the URL must not miss the key it just wrote.
@@ -33,7 +38,12 @@ export function Room() {
   if (!parsed?.success) return <Navigate to={`/j/${code}`} replace />
 
   return (
-    <RoomConnection credentials={parsed.data} onLeave={() => navigate('/')}>
+    <RoomConnection
+      credentials={parsed.data}
+      micOn={micOn}
+      cameraOn={cameraOn}
+      onLeave={() => navigate('/')}
+    >
       <div className="grid h-dvh grid-rows-[1fr_auto] bg-ink">
         <div className="relative min-h-0 p-3">
           <ConnectionBanner />
@@ -46,6 +56,10 @@ export function Room() {
           </div>
           <div className="justify-self-center">
             <LocalControls
+              micOn={micOn}
+              cameraOn={cameraOn}
+              onToggleMic={toggleMic}
+              onToggleCamera={toggleCamera}
               captions={captions}
               onToggleCaptions={() => setCaptions((c) => !c)}
               onLeave={() => navigate('/')}
