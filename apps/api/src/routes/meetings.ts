@@ -169,7 +169,10 @@ export async function meetingRoutes(app: FastifyInstance) {
 
     // Minted before the insert: a LiveKit failure here must not leave a
     // phantom participant row (leftAt: null forever) in the roster and the
-    // meeting marked started for a person who never actually joined.
+    // meeting marked started for a person who never actually joined. The
+    // public URL is resolved here too, in the same fail-before-writing
+    // group — it can throw in production (see livekitPublicUrl), and that
+    // throw must land before the insert for the same reason the mint does.
     //
     // R22: room is deliberately the meeting's id, not its code. The code is
     // this system's only credential and it never rotates, while room names
@@ -181,6 +184,7 @@ export async function meetingRoutes(app: FastifyInstance) {
       identity: participantId,
       name: parsed.data.displayName,
     })
+    const livekitUrl = livekitPublicUrl()
 
     await db.insert(participant).values({
       id: participantId,
@@ -198,7 +202,7 @@ export async function meetingRoutes(app: FastifyInstance) {
 
     return {
       livekitToken,
-      livekitUrl: livekitPublicUrl(),
+      livekitUrl,
       identity: participantId,
       participantId,
       guestToken: userId
