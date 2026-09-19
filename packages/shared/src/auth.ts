@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const MeUser = z.object({
   id: z.string(),
   name: z.string(),
-  email: z.string().email(),
+  email: z.email(),
   image: z.string().nullable(),
 })
 

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, type Page, test } from '@playwright/test'
 
 test('the app loads', async ({ page }) => {
   await page.goto('/')
@@ -37,8 +37,30 @@ test('fake media devices are available to two independent contexts', async ({ br
   }
 })
 
+// /api/me is stubbed rather than served by a live API. With the API down the
+// page's state depends on a race between react-query's retries and this
+// file's expect timeout, which is flaky at best; and CI runs no API at all.
+// Stubbing makes both renders assertable and removes the dependency.
+async function stubMe(page: Page, body: unknown) {
+  await page.route('**/api/me', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) }),
+  )
+}
+
 test('a visitor who is not signed in sees a sign-in button, not an error', async ({ page }) => {
+  await stubMe(page, { user: null })
   await page.goto('/')
+
   await expect(page.getByTestId('sign-in')).toBeVisible()
   await expect(page.getByTestId('signed-in')).toHaveCount(0)
+})
+
+test('a signed-in visitor sees their email and no sign-in button', async ({ page }) => {
+  await stubMe(page, {
+    user: { id: 'u1', name: 'Mariam', email: 'mariam@example.com', image: null },
+  })
+  await page.goto('/')
+
+  await expect(page.getByTestId('signed-in')).toContainText('mariam@example.com')
+  await expect(page.getByTestId('sign-in')).toHaveCount(0)
 })

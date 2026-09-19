@@ -33,34 +33,48 @@ export function signGuestToken(claims: GuestClaims, ttlSeconds = DEFAULT_TTL): s
   return `${header}.${body}.${sign(`${header}.${body}`)}`
 }
 
-// Returns null for any failure: bad signature, wrong meeting, expired, or malformed.
-// Plans 04 and 07 consume this null contract. To distinguish "expired, please rejoin"
-// from "wrong room" at the client, the return type would need to become a discriminated
-// result (e.g., { ok: true, claims } | { ok: false, reason: 'expired' | 'wrong_meeting' }).
-export function verifyGuestToken(token: string, expectedMeetingCode: string): GuestClaims | null {
+/**
+ * Why a guest token failed.
+ *
+ * Only `expired` may ever be shown to a person ("your pass ran out, rejoin
+ * from the link"). Distinguishing "wrong meeting" from "bad signature" to a
+ * person turns this into an oracle: a forger would learn whether a signature
+ * is valid from whether the answer changes with the meeting code. Callers
+ * must collapse `wrong_meeting` and `invalid` into one identical refusal.
+ */
+export type GuestTokenFailure = 'expired' | 'wrong_meeting' | 'invalid'
+
+export type GuestTokenResult =
+  | { ok: true; claims: GuestClaims }
+  | { ok: false; reason: GuestTokenFailure }
+
+const fail = (reason: GuestTokenFailure): GuestTokenResult => ({ ok: false, reason })
+
+export function verifyGuestToken(token: string, expectedMeetingCode: string): GuestTokenResult {
   const parts = token.split('.')
-  if (parts.length !== 3) return null
+  if (parts.length !== 3) return fail('invalid')
   const [header, body, signature] = parts as [string, string, string]
 
   const expected = Buffer.from(sign(`${header}.${body}`))
   const actual = Buffer.from(signature)
   // Constant-time: a length check first, because timingSafeEqual throws on
   // mismatched lengths and an exception is itself a timing signal.
-  if (expected.length !== actual.length) return null
-  if (!timingSafeEqual(expected, actual)) return null
+  if (expected.length !== actual.length) return fail('invalid')
+  if (!timingSafeEqual(expected, actual)) return fail('invalid')
 
   let payload: Payload
   try {
     payload = JSON.parse(Buffer.from(body, 'base64url').toString())
   } catch {
-    return null
+    return fail('invalid')
   }
 
-  if (payload === null || typeof payload !== 'object') return null
+  if (payload === null || typeof payload !== 'object') return fail('invalid')
 
-  if (typeof payload.exp !== 'number' || payload.exp < Math.floor(Date.now() / 1000)) return null
-  if (payload.meetingCode !== expectedMeetingCode) return null
+  if (typeof payload.exp !== 'number') return fail('invalid')
+  if (payload.exp < Math.floor(Date.now() / 1000)) return fail('expired')
+  if (payload.meetingCode !== expectedMeetingCode) return fail('wrong_meeting')
 
   const { meetingCode, displayName, speakLang, hearLang } = payload
-  return { meetingCode, displayName, speakLang, hearLang }
+  return { ok: true, claims: { meetingCode, displayName, speakLang, hearLang } }
 }
