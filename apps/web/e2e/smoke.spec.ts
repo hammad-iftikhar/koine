@@ -75,8 +75,17 @@ test('an unknown meeting code is reported, not swallowed', async ({ page }) => {
 })
 
 test('a malformed code is rejected before any request is made', async ({ page }) => {
+  let calledApi = false
+  // Fails the test the moment validation regresses into making a network
+  // call, rather than trusting the assertion below to notice indirectly.
+  await page.route('**/api/meetings/**', (route) => {
+    calledApi = true
+    return route.abort()
+  })
+
   await page.goto('/')
   await page.getByLabel('Meeting code or link').fill('nope')
   await page.getByRole('button', { name: 'Join' }).click()
   await expect(page.getByRole('alert')).toContainText(/does not look like a meeting code/i)
+  expect(calledApi).toBe(false)
 })

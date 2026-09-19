@@ -1,4 +1,9 @@
-import { type JoinMeetingBody, JoinResponse, MeetingResponse } from '@koine/shared'
+import {
+  CreateMeetingResponse,
+  type JoinMeetingBody,
+  JoinResponse,
+  MeetingResponse,
+} from '@koine/shared'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { apiFetch } from './api'
 
@@ -14,11 +19,11 @@ export function useMeeting(code: string | undefined) {
 export function useCreateMeeting() {
   return useMutation({
     mutationFn: async () =>
-      (
-        await apiFetch<{ code: string }>('/api/meetings', {
+      CreateMeetingResponse.parse(
+        await apiFetch('/api/meetings', {
           method: 'POST',
           body: JSON.stringify({ floorLang: 'en' }),
-        })
+        }),
       ).code,
   })
 }

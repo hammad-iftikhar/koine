@@ -8,6 +8,7 @@ export {
 } from './meeting-code'
 export {
   CreateMeetingBody,
+  CreateMeetingResponse,
   JoinMeetingBody,
   JoinResponse,
   MeetingResponse,

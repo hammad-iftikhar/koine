@@ -30,7 +30,12 @@ export const JoinResponse = z.object({
   guestToken: z.string().nullable(),
 })
 
+export const CreateMeetingResponse = z.object({
+  code: z.string(),
+})
+
 export type CreateMeetingBody = z.infer<typeof CreateMeetingBody>
 export type JoinMeetingBody = z.infer<typeof JoinMeetingBody>
 export type MeetingResponse = z.infer<typeof MeetingResponse>
 export type JoinResponse = z.infer<typeof JoinResponse>
+export type CreateMeetingResponse = z.infer<typeof CreateMeetingResponse>

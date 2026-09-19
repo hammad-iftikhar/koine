@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { DevicePreview } from '../components/DevicePreview'
 import { LanguagePicker } from '../components/LanguagePicker'
+import { ApiError } from '../lib/api'
 import { useMe } from '../lib/auth'
 import { useJoinMeeting, useMeeting } from '../lib/meetings'
 
@@ -49,10 +50,17 @@ export function PreJoin() {
   }, [user])
 
   if (meeting.isError) {
+    const notFound = meeting.error instanceof ApiError && meeting.error.status === 404
     return (
       <main className="mx-auto max-w-[520px] px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Meeting not found</h1>
-        <p className="text-fg-2">Check the code, or ask the host for the link.</p>
+        <h1 className="text-2xl font-semibold">
+          {notFound ? 'Meeting not found' : "Couldn't load this meeting"}
+        </h1>
+        <p className="text-fg-2">
+          {notFound
+            ? 'Check the code, or ask the host for the link.'
+            : 'Something went wrong — try again.'}
+        </p>
       </main>
     )
   }
@@ -128,9 +136,7 @@ export function PreJoin() {
           {join.isPending ? 'Joining…' : 'Join now'}
         </button>
 
-        {join.isError && (
-          <p className="m-0 text-[13px] text-red">{(join.error as Error).message}</p>
-        )}
+        {join.isError && <p className="m-0 text-[13px] text-red">{join.error.message}</p>}
       </div>
     </main>
   )
