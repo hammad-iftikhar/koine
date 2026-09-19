@@ -8,6 +8,7 @@ export type ControlBarProps = {
   captions: boolean
   hand: boolean
   presenting: boolean
+  presentDisabled?: boolean
   onToggle: (control: 'mic' | 'camera' | 'captions' | 'hand' | 'present') => void
   onLeave: () => void
 }
@@ -18,6 +19,7 @@ export function ControlBar({
   captions,
   hand,
   presenting,
+  presentDisabled = false,
   onToggle,
   onLeave,
 }: ControlBarProps) {
@@ -54,8 +56,17 @@ export function ControlBar({
         onClick={() => onToggle('hand')}
       />
       <ControlButton
-        label={presenting ? 'Stop presenting' : 'Present now'}
+        // The label carries the reason when the control is unavailable; a
+        // greyed-out "Present now" would leave the user guessing.
+        label={
+          presenting
+            ? 'Stop presenting'
+            : presentDisabled
+              ? 'Someone else is presenting'
+              : 'Present now'
+        }
         state={presenting ? 'active' : 'default'}
+        disabled={presentDisabled}
         icon={<MonitorUp size={20} />}
         onClick={() => onToggle('present')}
       />
