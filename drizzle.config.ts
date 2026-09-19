@@ -15,14 +15,8 @@ export default defineConfig({
   schema: relativeToCwd('apps/api/src/db/schema.ts'),
   out: relativeToCwd('apps/api/drizzle'),
   dialect: 'postgresql',
+  // The migration ledger stays in drizzle-kit's default "drizzle" schema. The
+  // test harness (apps/api/src/test/db.ts) migrates a whole template database
+  // and clones it, so every test database carries its own ledger already.
   dbCredentials: { url: process.env.DATABASE_URL ?? 'postgres://koine:koine@localhost:5432/koine' },
-  // drizzle-kit's migration ledger lives in a fixed "drizzle" schema by
-  // default, unaffected by DATABASE_URL's search_path — so a schema-scoped
-  // test DB would be seen as "already migrated" the moment any other schema
-  // in the same database has run migration 0000, and its tables would never
-  // get created. The test harness (apps/api/src/test/db.ts) points the ledger
-  // at the test's own schema so each isolated schema tracks its own history.
-  ...(process.env.DRIZZLE_MIGRATIONS_SCHEMA
-    ? { migrations: { schema: process.env.DRIZZLE_MIGRATIONS_SCHEMA } }
-    : {}),
 })

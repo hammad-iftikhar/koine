@@ -45,6 +45,12 @@ jobs:
       - name: Install Playwright browser
         run: pnpm --filter @koine/web exec playwright install --with-deps chromium
 
+      # The API tests clone an isolated database per test file from a migrated
+      # template. The harness builds it on demand, but doing it here makes a
+      # migration failure report as one instead of as a test failure.
+      - name: Prepare API test database template
+        run: pnpm --filter @koine/api test:setup
+
       - name: Unit and component tests
         run: pnpm test
 
