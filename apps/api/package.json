@@ -17,6 +17,7 @@
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.0.0",
     "ioredis": "^6.0.0",
+    "livekit-server-sdk": "^2.19.0",
     "postgres": "^3.4.9"
   },
   "devDependencies": {
