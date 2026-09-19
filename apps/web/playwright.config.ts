@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -25,8 +26,13 @@ export default defineConfig({
             '--use-fake-ui-for-media-stream',
             // Screen share needs Chromium to auto-select a source and
             // auto-accept the tab-capture prompt instead of hanging on UI
-            // nobody will click.
-            '--auto-select-desktop-capture-source=Entire screen',
+            // nobody will click. Tab capture (not "Entire screen") is
+            // deliberate: it is in-process and should not need an OS-level
+            // Screen Recording grant the way display capture does. On this
+            // macOS host it still fails with "Could not start video source"
+            // (see call.spec.ts's darwin skip) — kept anyway because it is
+            // the correct choice for CI (Linux), where it is expected to work.
+            '--auto-select-tab-capture-source-by-title=Koine',
             '--auto-accept-this-tab-capture',
           ],
         },

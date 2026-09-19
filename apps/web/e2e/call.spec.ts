@@ -57,6 +57,11 @@ test.describe('a real call between two browsers', () => {
   })
 
   test('a screen share appears for the other participant', async ({ browser, request }) => {
+    test.skip(
+      process.platform === 'darwin',
+      'getDisplayMedia needs a macOS Screen Recording grant for the Playwright Chromium binary, which CI (Linux) does not need. Grant it in System Settings > Privacy & Security > Screen Recording to run this locally.',
+    )
+
     const code = await createMeeting(request)
     const alice = await join(browser, code, 'Alice')
     const bob = await join(browser, code, 'Bob')
