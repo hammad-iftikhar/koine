@@ -23,6 +23,11 @@ export default defineConfig({
             // Grants the permission prompt automatically. Without it the call
             // hangs forever waiting for a click nobody will make.
             '--use-fake-ui-for-media-stream',
+            // Screen share needs Chromium to auto-select a source and
+            // auto-accept the tab-capture prompt instead of hanging on UI
+            // nobody will click.
+            '--auto-select-desktop-capture-source=Entire screen',
+            '--auto-accept-this-tab-capture',
           ],
         },
       },

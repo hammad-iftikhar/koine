@@ -51,6 +51,11 @@ services:
     build: { context: ., dockerfile: docker/Dockerfile.dev }
     command: ["pnpm", "--config.verify-deps-before-run=false", "--filter", "@koine/api", "dev"]
     environment:
+      # Compose is the dev and e2e stack; this turns on the x-test-user seam
+      # that the e2e specs authenticate through (see currentUserId in
+      # apps/api/src/routes/meetings.ts). Production deployment is module
+      # 08's problem.
+      NODE_ENV: test
       DATABASE_URL: postgres://koine:koine@postgres:5432/koine
       REDIS_URL: redis://redis:6379
       LIVEKIT_URL: ws://livekit:7880
