@@ -11,6 +11,7 @@ Prerequisites: Node 22+, pnpm 11 (via corepack), Docker Desktop.
 pnpm install
 cp .env.example .env          # dev placeholders; real keys are optional
 docker compose up -d          # postgres, redis, livekit
+pnpm --filter @koine/api db:migrate   # apps/api's route tests hit this database directly
 ```
 
 That is enough to work on the apps from the host. To run everything in

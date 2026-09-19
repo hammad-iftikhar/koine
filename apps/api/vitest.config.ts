@@ -19,6 +19,9 @@ export default defineConfig({
       BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ?? 'test_google_client_id',
       GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ?? 'test_google_client_secret',
+      REDIS_URL: process.env.REDIS_URL ?? 'redis://localhost:6379',
+      LIVEKIT_API_KEY: process.env.LIVEKIT_API_KEY ?? 'devkey',
+      LIVEKIT_API_SECRET: process.env.LIVEKIT_API_SECRET ?? 'devsecret_change_me_at_least_32_chars',
     },
   },
 })

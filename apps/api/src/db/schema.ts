@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { boolean, index, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 // Better Auth's required shape. Generated once, then committed — do not
 // hand-edit column names, the library looks them up by name.
@@ -51,3 +51,39 @@ export const verification = pgTable('verification', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
+
+export const meeting = pgTable(
+  'meeting',
+  {
+    id: text('id').primaryKey(),
+    // Normalised form: ten letters, no dashes. formatMeetingCode() adds them for display.
+    code: text('code').notNull(),
+    title: text('title'),
+    hostUserId: text('host_user_id').references(() => user.id, { onDelete: 'set null' }),
+    floorLang: text('floor_lang').notNull().default('en'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    startedAt: timestamp('started_at'),
+    endedAt: timestamp('ended_at'),
+  },
+  (t) => ({ codeIdx: uniqueIndex('meeting_code_idx').on(t.code) }),
+)
+
+export const participant = pgTable(
+  'participant',
+  {
+    id: text('id').primaryKey(),
+    meetingId: text('meeting_id')
+      .notNull()
+      .references(() => meeting.id, { onDelete: 'cascade' }),
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    displayName: text('display_name').notNull(),
+    speakLang: text('speak_lang').notNull(),
+    // 'floor' means original audio. Stored, not client state — plan 06's agent
+    // rebuilds the translation channel set from this column after a worker dies.
+    hearLang: text('hear_lang').notNull(),
+    role: text('role').notNull(),
+    joinedAt: timestamp('joined_at').notNull().defaultNow(),
+    leftAt: timestamp('left_at'),
+  },
+  (t) => ({ liveIdx: index('participant_live_idx').on(t.meetingId, t.leftAt) }),
+)

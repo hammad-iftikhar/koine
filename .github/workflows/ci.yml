@@ -45,6 +45,16 @@ jobs:
       - name: Install Playwright browser
         run: pnpm --filter @koine/web exec playwright install --with-deps chromium
 
+      # meetings.test.ts deliberately imports `db` from `../db/client` (the
+      # DATABASE_URL database itself, not a cloned template) so its route
+      # tests exercise real Drizzle rather than mocks. Nothing else migrates
+      # that database in CI, so without this step `user`/`meeting`/
+      # `participant` do not exist here and the first such test 500s.
+      - name: Migrate the shared database
+        run: pnpm --filter @koine/api db:migrate
+        env:
+          DATABASE_URL: postgres://koine:koine@localhost:5432/koine
+
       # The API tests clone an isolated database per test file from a migrated
       # template. The harness builds it on demand, but doing it here makes a
       # migration failure report as one instead of as a test failure.

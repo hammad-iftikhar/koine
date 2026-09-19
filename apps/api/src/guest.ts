@@ -1,11 +1,12 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import type { LanguageCode } from '@koine/shared'
+import type { FLOOR, LanguageCode } from '@koine/shared'
 
 export type GuestClaims = {
   meetingCode: string
   displayName: string
   speakLang: LanguageCode
-  hearLang: LanguageCode
+  // 'floor' (original, untranslated audio) is a legitimate choice, not a LanguageCode.
+  hearLang: LanguageCode | typeof FLOOR
 }
 
 type Payload = GuestClaims & { exp: number }
