@@ -1,6 +1,8 @@
 import { formatMeetingCode } from '@koine/shared'
 import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest'
 import { buildApp } from '../app'
+import { db } from '../db/client'
+import { user } from '../db/schema'
 import { redis } from '../redis'
 
 let app: Awaited<ReturnType<typeof buildApp>>
@@ -8,6 +10,18 @@ let app: Awaited<ReturnType<typeof buildApp>>
 beforeAll(async () => {
   app = await buildApp()
   await app.ready()
+
+  // meeting.host_user_id and participant.user_id are real foreign keys to
+  // `user`, so the x-test-user identities this file sends need a backing
+  // row. onConflictDoNothing keeps repeated runs against the shared
+  // database idempotent — these rows are never deleted (see leave/end
+  // tests below; other test files may share these ids).
+  for (const id of ['u_host', 'u_someone_else']) {
+    await db
+      .insert(user)
+      .values({ id, name: id, email: `${id}@test.invalid` })
+      .onConflictDoNothing()
+  }
 })
 beforeEach(async () => {
   // Not redis.flushdb(): vitest runs test files in parallel processes against

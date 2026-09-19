@@ -9,7 +9,7 @@ import { and, eq, isNull } from 'drizzle-orm'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { getSession } from '../auth'
 import { db } from '../db/client'
-import { meeting, participant, user } from '../db/schema'
+import { meeting, participant } from '../db/schema'
 import { signGuestToken } from '../guest'
 import { mintAccessToken } from '../livekit'
 import { consume } from '../rate-limit'
@@ -21,16 +21,7 @@ async function currentUserId(request: FastifyRequest): Promise<string | null> {
   // Test seam: skips the OAuth round trip. Never honoured outside tests.
   if (process.env.NODE_ENV === 'test') {
     const header = request.headers['x-test-user']
-    if (typeof header === 'string') {
-      // meeting.host_user_id and participant.user_id carry a real foreign
-      // key to `user` (task 1). Without a backing row, using this id as a
-      // host or participant would violate that constraint on insert.
-      await db
-        .insert(user)
-        .values({ id: header, name: header, email: `${header}@test.invalid` })
-        .onConflictDoNothing()
-      return header
-    }
+    if (typeof header === 'string') return header
   }
   const result = await getSession(request)
   return result?.user?.id ?? null
