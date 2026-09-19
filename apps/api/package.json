@@ -10,6 +10,7 @@
     "db:migrate": "drizzle-kit migrate --config ../../drizzle.config.ts"
   },
   "dependencies": {
+    "@fastify/cors": "^11.3.0",
     "@koine/shared": "workspace:*",
     "better-auth": "^1.7.5",
     "drizzle-orm": "^0.45.2",

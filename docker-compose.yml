@@ -61,6 +61,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:5173,http://localhost:4173}
     ports: ["3000:3000"]
     # Sources only. node_modules is image content and nothing is mounted over
     # a path inside another mount: Docker Desktop tears a volume mounted inside
