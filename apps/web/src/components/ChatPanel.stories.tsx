@@ -42,9 +42,11 @@ export const Default: Story = {
 
 export const SendingCallsBack: Story = {
   play: async ({ canvasElement, args }) => {
-    const input = within(canvasElement).getByLabelText('Send a message')
+    const input = within(canvasElement).getByLabelText('Send a message') as HTMLInputElement
     await userEvent.type(input, 'Sounds good{Enter}')
     await expect(args.onSend).toHaveBeenCalledWith('Sounds good')
+    // The composer clears once the message is on its way, not left to resend.
+    await expect(input).toHaveValue('')
   },
 }
 

@@ -41,18 +41,30 @@ export function ChatMessage({
       <div
         data-testid="message-bubble"
         className={cn(
-          'max-w-[85%] break-words rounded-[14px] border px-3 py-2 text-[13.5px] text-fg-2',
+          'max-w-[85%] break-words rounded-[14px] border px-3 py-2 text-[13.5px]',
           own
-            ? 'rounded-br-[4px] border-blue bg-[var(--pane-2)]'
-            : 'rounded-bl-[4px] border-[var(--edge)] bg-[var(--pane)]',
+            ? 'rounded-br-[4px] border-white/25 bg-blue text-ink'
+            : 'rounded-bl-[4px] border-[var(--edge)] bg-[var(--pane)] text-fg-2',
         )}
       >
         <p className="m-0">{body}</p>
         {translated && (
-          <p className="m-0 mt-1.5 border-l-2 border-blue pl-2 text-fg">{translated}</p>
+          <p
+            className={cn(
+              'm-0 mt-1.5 border-l-2 pl-2',
+              own ? 'border-ink/30 text-ink' : 'border-blue text-fg',
+            )}
+          >
+            {translated}
+          </p>
         )}
         {translationFailed && (
-          <p className="m-0 mt-1.5 flex items-center gap-1 text-[12px] text-amber">
+          <p
+            className={cn(
+              'm-0 mt-1.5 flex items-center gap-1 text-[12px]',
+              own ? 'text-ink' : 'text-amber',
+            )}
+          >
             <AlertTriangle size={12} aria-hidden="true" />
             Translation unavailable
           </p>
