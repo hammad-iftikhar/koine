@@ -32,7 +32,7 @@ export function ParticipantTile({
       data-testid="participant-tile"
       data-speaking={String(isSpeaking)}
       className={cn(
-        'relative grid h-full w-full place-items-center overflow-hidden rounded-[18px] border bg-white/5',
+        'relative grid h-full w-full place-items-center overflow-hidden rounded-[18px] border bg-[var(--tile)]',
         isSpeaking
           ? 'border-blue shadow-[0_0_0_1px_var(--blue),0_0_32px_-10px_var(--blue)]'
           : 'border-[var(--edge)]',
@@ -49,13 +49,13 @@ export function ParticipantTile({
       ) : (
         <span
           data-testid="avatar"
-          className="grid h-14 w-14 place-items-center rounded-full bg-blue text-[19px] font-semibold text-white"
+          className="grid h-14 w-14 place-items-center rounded-full bg-blue text-[19px] font-semibold text-ink"
         >
           {name.slice(0, 1).toUpperCase()}
         </span>
       )}
 
-      <span className="glass absolute bottom-2.5 left-2.5 flex items-center gap-[7px] rounded-full px-2.5 py-1 text-[12.5px] text-fg">
+      <span className="glass-dark absolute bottom-2.5 left-2.5 flex items-center gap-[7px] rounded-full px-2.5 py-1 text-[12.5px] text-fg">
         {isSpeaking && <SpeakingBars active />}
         {label}
       </span>
@@ -64,7 +64,7 @@ export function ParticipantTile({
         <span
           aria-label="Microphone off"
           role="img"
-          className="glass absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full text-red"
+          className="glass-dark absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full text-red"
         >
           <MicOff size={14} aria-hidden="true" />
         </span>

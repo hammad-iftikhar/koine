@@ -35,7 +35,7 @@ export function CaptionBox({
       aria-label="Live caption"
       aria-live="polite"
       aria-atomic="true"
-      className="glass-strong mx-auto w-[min(640px,92%)] rounded-[18px] px-[18px] py-3.5"
+      className="glass-dark mx-auto w-[min(640px,92%)] rounded-[18px] px-[18px] py-3.5"
     >
       <div className="mb-1.5 flex items-center gap-2 text-[11.5px] text-fg-2">
         <Globe size={14} aria-hidden="true" />

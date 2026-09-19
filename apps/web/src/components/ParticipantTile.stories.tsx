@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
+import { fakeStream } from '../../.storybook/fakeStream'
 import { ParticipantTile } from './ParticipantTile'
 
 const meta: Meta<typeof ParticipantTile> = {
@@ -56,5 +57,14 @@ export const Self: Story = {
   args: { name: 'Hammad', cameraOff: true, isSelf: true },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('You')).toBeInTheDocument()
+  },
+}
+
+export const WithStream: Story = {
+  args: { name: 'Priya', stream: fakeStream('Priya') },
+  play: async ({ canvasElement }) => {
+    const video = within(canvasElement).getByTestId('participant-tile').querySelector('video')
+    await expect(video).toBeTruthy()
+    await expect(video?.srcObject).toBeTruthy()
   },
 }

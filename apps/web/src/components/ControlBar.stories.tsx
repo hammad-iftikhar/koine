@@ -32,6 +32,9 @@ export const Default: Story = {
     ]) {
       await expect(c.getByLabelText(label)).toBeInTheDocument()
     }
+    // Mic-live indicator: the same SpeakingBars primitive used in a tile and
+    // in pre-join must also render beside the control-bar mic button.
+    await expect(c.getByTestId('speaking-bars')).toHaveAttribute('data-active', 'true')
   },
 }
 
@@ -41,6 +44,10 @@ export const Muted: Story = {
     // Label flips with state: it names what the click will do.
     const btn = within(canvasElement).getByLabelText('Unmute microphone')
     await expect(btn).toHaveAttribute('data-state', 'danger')
+    await expect(within(canvasElement).getByTestId('speaking-bars')).toHaveAttribute(
+      'data-active',
+      'false',
+    )
   },
 }
 

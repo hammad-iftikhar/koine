@@ -1,5 +1,6 @@
 import { Hand, Mic, MicOff, MonitorUp, PhoneOff, Subtitles, Video, VideoOff } from 'lucide-react'
 import { ControlButton } from './ControlButton'
+import { SpeakingBars } from './SpeakingBars'
 
 export type ControlBarProps = {
   mic: boolean
@@ -22,12 +23,18 @@ export function ControlBar({
 }: ControlBarProps) {
   return (
     <div className="glass flex items-center gap-2 rounded-full p-2">
-      <ControlButton
-        label={mic ? 'Mute microphone' : 'Unmute microphone'}
-        state={mic ? 'default' : 'danger'}
-        icon={mic ? <Mic size={20} /> : <MicOff size={20} />}
-        onClick={() => onToggle('mic')}
-      />
+      <div className="flex items-center gap-2">
+        <ControlButton
+          label={mic ? 'Mute microphone' : 'Unmute microphone'}
+          state={mic ? 'default' : 'danger'}
+          icon={mic ? <Mic size={20} /> : <MicOff size={20} />}
+          onClick={() => onToggle('mic')}
+        />
+        {/* Mic-live indicator — the same primitive used for speaking in a
+            tile and the input level meter in pre-join. Decorative: mic state
+            is still carried by the icon glyph above. */}
+        <SpeakingBars active={mic} />
+      </div>
       <ControlButton
         label={camera ? 'Turn off camera' : 'Turn on camera'}
         state={camera ? 'default' : 'danger'}

@@ -33,7 +33,7 @@ export function PanelToggles({ active, participantCount, onOpen }: PanelTogglesP
         >
           <Icon size={19} aria-hidden="true" />
           {name === 'people' && (
-            <span className="absolute right-1 top-1 grid h-[15px] min-w-[15px] place-items-center rounded-full bg-blue px-[3px] text-[10px] text-white">
+            <span className="absolute right-1 top-1 grid h-[15px] min-w-[15px] place-items-center rounded-full bg-blue px-[3px] text-[10px] text-ink">
               {participantCount}
             </span>
           )}

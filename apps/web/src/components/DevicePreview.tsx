@@ -14,7 +14,7 @@ export function DevicePreview({ stream, micOn, cameraOn, onToggle }: DevicePrevi
   const video = useVideoStream(stream)
 
   return (
-    <div className="relative grid aspect-video w-full max-w-full place-items-center overflow-hidden rounded-[20px] border border-[var(--edge)] bg-[rgba(255,255,255,0.05)]">
+    <div className="relative grid aspect-video w-full max-w-full place-items-center overflow-hidden rounded-[20px] border border-[var(--edge)] bg-[var(--tile)]">
       {stream && cameraOn ? (
         <video ref={video} autoPlay playsInline muted className="h-full w-full object-cover" />
       ) : (
