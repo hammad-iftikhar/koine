@@ -1,18 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useVideoStream } from '../lib/useVideoStream'
 
 export type ScreenShareTileProps = { presenterName: string; stream?: MediaStream }
 
 export function ScreenShareTile({ presenterName, stream }: ScreenShareTileProps) {
-  const video = useRef<HTMLVideoElement>(null)
-
-  useEffect(() => {
-    const el = video.current
-    if (!el || !stream) return
-    el.srcObject = stream
-    return () => {
-      el.srcObject = null
-    }
-  }, [stream])
+  const video = useVideoStream(stream)
 
   return (
     <div

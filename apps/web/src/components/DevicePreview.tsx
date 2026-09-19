@@ -1,5 +1,5 @@
 import { Mic, MicOff, Video, VideoOff } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useVideoStream } from '../lib/useVideoStream'
 import { ControlButton } from './ControlButton'
 import { SpeakingBars } from './SpeakingBars'
 
@@ -11,16 +11,7 @@ export type DevicePreviewProps = {
 }
 
 export function DevicePreview({ stream, micOn, cameraOn, onToggle }: DevicePreviewProps) {
-  const video = useRef<HTMLVideoElement>(null)
-
-  useEffect(() => {
-    const el = video.current
-    if (!el || !stream) return
-    el.srcObject = stream
-    return () => {
-      el.srcObject = null
-    }
-  }, [stream])
+  const video = useVideoStream(stream)
 
   return (
     <div className="relative grid aspect-video w-full max-w-full place-items-center overflow-hidden rounded-[20px] border border-[var(--edge)] bg-[rgba(255,255,255,0.05)]">

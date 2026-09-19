@@ -23,7 +23,7 @@ export function JoinCodeField({ value, onChange, onSubmit, error }: JoinCodeFiel
           onKeyDown={(e) => {
             if (e.key === 'Enter') onSubmit()
           }}
-          className="w-[170px] border-0 bg-transparent text-fg tabular-nums outline-none placeholder:text-fg-3"
+          className="w-[170px] rounded-full border-0 bg-transparent text-fg tabular-nums outline-none placeholder:text-fg-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
         />
         <button
           type="button"

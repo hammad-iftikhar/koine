@@ -1,6 +1,6 @@
 import { MicOff } from 'lucide-react'
-import { useEffect, useRef } from 'react'
 import { cn } from '../lib/cn'
+import { useVideoStream } from '../lib/useVideoStream'
 import { SpeakingBars } from './SpeakingBars'
 
 export type ParticipantTileProps = {
@@ -20,16 +20,7 @@ export function ParticipantTile({
   stream,
   isSelf = false,
 }: ParticipantTileProps) {
-  const video = useRef<HTMLVideoElement>(null)
-
-  useEffect(() => {
-    const el = video.current
-    if (!el || !stream) return
-    el.srcObject = stream
-    return () => {
-      el.srcObject = null
-    }
-  }, [stream])
+  const video = useVideoStream(stream)
 
   // A muted participant is never shown as speaking. The detector can lag the
   // toggle, and "you are being heard" is the wrong thing to get wrong.

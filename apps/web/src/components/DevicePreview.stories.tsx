@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
+import { fakeStream } from '../../.storybook/fakeStream'
 import { DevicePreview } from './DevicePreview'
 
 const meta: Meta<typeof DevicePreview> = {
@@ -35,5 +36,12 @@ export const TogglingCallsBack: Story = {
   play: async ({ canvasElement, args }) => {
     await userEvent.click(within(canvasElement).getByLabelText('Mute microphone'))
     await expect(args.onToggle).toHaveBeenCalledWith('mic')
+  },
+}
+
+export const WithStream: Story = {
+  args: { stream: fakeStream('You') },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('video')).toBeTruthy()
   },
 }
