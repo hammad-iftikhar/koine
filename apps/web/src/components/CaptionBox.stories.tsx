@@ -19,9 +19,18 @@ export const Final: Story = {
   play: async ({ canvasElement }) => {
     const c = within(canvasElement)
     // Both lines present. A translation you cannot audit is one you cannot trust.
-    await expect(c.getByText('Se movió la fecha al viernes.')).toBeInTheDocument()
-    await expect(c.getByText('The deadline moved to Friday.')).toBeInTheDocument()
+    const original = c.getByText('Se movió la fecha al viernes.')
+    const translated = c.getByText('The deadline moved to Friday.')
+    await expect(original).toBeInTheDocument()
+    await expect(translated).toBeInTheDocument()
     await expect(c.getByText(/translated from Spanish/i)).toBeInTheDocument()
+
+    // The one deliberate departure from Meet: the original stays visible
+    // above its translation. Assert DOM order, not just presence — a
+    // reordered layout must fail this.
+    await expect(
+      original.compareDocumentPosition(translated) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   },
 }
 
