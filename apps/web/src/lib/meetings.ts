@@ -12,6 +12,11 @@ export function useMeeting(code: string | undefined) {
     queryKey: ['meeting', code],
     enabled: Boolean(code),
     retry: false,
+    // The lookup route is rate-limited per IP (10/60s). Without this, alt-tabbing
+    // back to the pre-join screen refetches on window focus and spends the same
+    // bucket a legitimate join attempt needs.
+    refetchOnWindowFocus: false,
+    staleTime: 30_000,
     queryFn: async () => MeetingResponse.parse(await apiFetch(`/api/meetings/${code}`)),
   })
 }

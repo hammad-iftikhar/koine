@@ -1,4 +1,4 @@
-import { FLOOR, type LanguageCode } from '@koine/shared'
+import { FLOOR, type LanguageCode, normalizeMeetingCode } from '@koine/shared'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { DevicePreview } from '../components/DevicePreview'
@@ -128,7 +128,13 @@ export function PreJoin() {
               speakLang: speak,
               hearLang: hear,
             })
-            sessionStorage.setItem(`koine:${code}`, JSON.stringify(result))
+            // Keyed by the normalized code so '/j/aaa-aaaa-aaa' and
+            // '/j/aaaaaaaaaa' write the same key — plan 05 only needs to
+            // read one spelling.
+            sessionStorage.setItem(
+              `koine:${normalizeMeetingCode(code) ?? code}`,
+              JSON.stringify(result),
+            )
             navigate(`/m/${code}`)
           }}
           className="w-full max-w-[320px] rounded-full bg-blue px-5 py-3.5 font-semibold text-white disabled:opacity-60"

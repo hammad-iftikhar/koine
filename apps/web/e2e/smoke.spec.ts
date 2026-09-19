@@ -70,6 +70,20 @@ test('a signed-in visitor sees a way to start a meeting and no sign-in button', 
 })
 
 test('an unknown meeting code is reported, not swallowed', async ({ page }) => {
+  // Playwright's webServer only runs `vite preview` — nothing here starts the
+  // API — so without a stub the lookup's fetch is refused with a TypeError,
+  // not a 404, and PreJoin would render its generic error state instead of
+  // the branch this test claims to exercise. Stub the API's exact 404 body.
+  await page.route('**/api/meetings/**', (route) =>
+    route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        message: 'Meeting code not found — check the code or ask the host for the link.',
+      }),
+    }),
+  )
+
   await page.goto('/j/aaa-aaaa-aaa')
   await expect(page.getByText('Meeting not found')).toBeVisible()
 })
