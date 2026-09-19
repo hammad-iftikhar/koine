@@ -40,3 +40,13 @@ it('expires the window', async () => {
   await new Promise((r) => setTimeout(r, 1100))
   expect((await consume(k, 1, 1)).allowed).toBe(true)
 })
+
+it('rejects rather than returning a NaN remaining count when the INCR errors', async () => {
+  // Plant a non-string value at the key so INCR fails with WRONGTYPE inside
+  // the transaction. Without the error check, `consume` would resolve with
+  // `{ allowed: false, remaining: NaN }` instead of surfacing the fault.
+  const k = key()
+  await redis.lpush(`rl:${k}`, 'x')
+
+  await expect(consume(k, 10, 60)).rejects.toThrow()
+})
