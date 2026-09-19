@@ -6,3 +6,9 @@ export {
   generateMeetingCode,
   normalizeMeetingCode,
 } from './meeting-code'
+export {
+  CreateMeetingBody,
+  JoinMeetingBody,
+  JoinResponse,
+  MeetingResponse,
+} from './meetings'

@@ -4,6 +4,7 @@ import { auth as defaultAuth, toHeaders } from './auth'
 import { webOrigins } from './origins'
 import { healthRoutes } from './routes/health'
 import { meRoutes } from './routes/me'
+import { meetingRoutes } from './routes/meetings'
 
 /**
  * Builds the app without listening, so tests can use app.inject().
@@ -64,5 +65,6 @@ export async function buildApp(
 
   await app.register(healthRoutes)
   await app.register(meRoutes)
+  await app.register(meetingRoutes)
   return app
 }
