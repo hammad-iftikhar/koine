@@ -1,10 +1,11 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import type { LanguageCode } from '@koine/shared'
 
 export type GuestClaims = {
   meetingCode: string
   displayName: string
-  speakLang: string
-  hearLang: string
+  speakLang: LanguageCode
+  hearLang: LanguageCode
 }
 
 type Payload = GuestClaims & { exp: number }
@@ -32,6 +33,10 @@ export function signGuestToken(claims: GuestClaims, ttlSeconds = DEFAULT_TTL): s
   return `${header}.${body}.${sign(`${header}.${body}`)}`
 }
 
+// Returns null for any failure: bad signature, wrong meeting, expired, or malformed.
+// Plans 04 and 07 consume this null contract. To distinguish "expired, please rejoin"
+// from "wrong room" at the client, the return type would need to become a discriminated
+// result (e.g., { ok: true, claims } | { ok: false, reason: 'expired' | 'wrong_meeting' }).
 export function verifyGuestToken(token: string, expectedMeetingCode: string): GuestClaims | null {
   const parts = token.split('.')
   if (parts.length !== 3) return null
@@ -50,6 +55,8 @@ export function verifyGuestToken(token: string, expectedMeetingCode: string): Gu
   } catch {
     return null
   }
+
+  if (payload === null || typeof payload !== 'object') return null
 
   if (typeof payload.exp !== 'number' || payload.exp < Math.floor(Date.now() / 1000)) return null
   if (payload.meetingCode !== expectedMeetingCode) return null
