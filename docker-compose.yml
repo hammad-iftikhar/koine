@@ -36,6 +36,11 @@ services:
       - "7882:7882/udp"    # single-port UDP mux
     depends_on:
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7880/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   api:
     profiles: ["apps"]
@@ -63,6 +68,7 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+      livekit: { condition: service_healthy }
 
   agent:
     profiles: ["apps"]
@@ -79,6 +85,7 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+      livekit: { condition: service_healthy }
 
   web:
     profiles: ["apps"]
