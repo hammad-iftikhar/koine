@@ -42,10 +42,14 @@ services:
       timeout: 3s
       retries: 10
 
+  # --config.verify-deps-before-run=false: node_modules is baked into the image
+  # and only sources are mounted, so pnpm's pre-run dependency check has nothing
+  # to usefully compare against. Left on, it reinstalls on every start against a
+  # store it re-derives from the mount, and fails.
   api:
     profiles: ["apps"]
     build: { context: ., dockerfile: docker/Dockerfile.dev }
-    command: ["pnpm", "--filter", "@koine/api", "dev"]
+    command: ["pnpm", "--config.verify-deps-before-run=false", "--filter", "@koine/api", "dev"]
     environment:
       DATABASE_URL: postgres://koine:koine@postgres:5432/koine
       REDIS_URL: redis://redis:6379
@@ -58,13 +62,17 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
     ports: ["3000:3000"]
+    # Sources only. node_modules is image content and nothing is mounted over
+    # a path inside another mount: Docker Desktop tears a volume mounted inside
+    # a bind mount back down about a second after the container starts, after
+    # which the host's macOS node_modules shows through the bind and the
+    # container runs darwin-arm64 binaries. Dependency, config and manifest
+    # changes therefore need `docker compose --profile apps up --build`.
     volumes: &src
-      - ./:/app
-      - /app/node_modules
-      - /app/apps/api/node_modules
-      - /app/apps/agent/node_modules
-      - /app/apps/web/node_modules
-      - /app/packages/shared/node_modules
+      - ./apps/api/src:/app/apps/api/src
+      - ./apps/agent/src:/app/apps/agent/src
+      - ./apps/web/src:/app/apps/web/src
+      - ./packages/shared/src:/app/packages/shared/src
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -73,7 +81,7 @@ services:
   agent:
     profiles: ["apps"]
     build: { context: ., dockerfile: docker/Dockerfile.dev }
-    command: ["pnpm", "--filter", "@koine/agent", "dev"]
+    command: ["pnpm", "--config.verify-deps-before-run=false", "--filter", "@koine/agent", "dev"]
     environment:
       DATABASE_URL: postgres://koine:koine@postgres:5432/koine
       REDIS_URL: redis://redis:6379
@@ -90,7 +98,7 @@ services:
   web:
     profiles: ["apps"]
     build: { context: ., dockerfile: docker/Dockerfile.dev }
-    command: ["pnpm", "--filter", "@koine/web", "dev", "--host", "0.0.0.0"]
+    command: ["pnpm", "--config.verify-deps-before-run=false", "--filter", "@koine/web", "dev", "--host", "0.0.0.0"]
     environment:
       VITE_API_URL: http://localhost:3000
       # The browser reaches LiveKit from the host, not the compose network.
