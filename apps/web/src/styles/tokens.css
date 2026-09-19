@@ -9,6 +9,18 @@
   --edge-top: rgba(255, 255, 255, 0.22);
   --well: rgba(0, 0, 0, 0.34);
 
+  /* Opaque fallback fill for any glass surface when the blur performance
+     switch is off (`:root[data-blur='off']`). */
+  --pane-off: rgb(26 26 30);
+
+  /* Dark scrim for chrome that floats over live video or a shared screen —
+     unlike --pane/--pane-2, this darkens the backing so captions and name
+     pills meet contrast against their own fill, not against bright video. */
+  --scrim: rgba(0, 0, 0, 0.6);
+
+  /* Translucent ground for a video tile before/without a stream. */
+  --tile: rgba(255, 255, 255, 0.05);
+
   /* Text */
   --fg: #f5f5f7;
   --fg-2: #a1a1aa;

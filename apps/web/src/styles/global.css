@@ -42,5 +42,53 @@ body {
     animation-duration: 0.01ms !important;
     /* biome-ignore lint/complexity/noImportantStyles: must beat inline animation styles (e.g. SpeakingBars) set via the style attribute */
     animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: must beat component transition-colors utilities (ControlButton, PanelToggles, ChatPanel) */
+    transition-duration: 0.01ms !important;
   }
+}
+
+/* Glass is for things that float over content, never for the ground itself. */
+.glass {
+  background: var(--pane);
+  border: 1px solid var(--edge);
+  box-shadow:
+    inset 0 1px 0 var(--edge-top),
+    var(--lift);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+}
+
+.glass-strong {
+  background: var(--pane-2);
+  border: 1px solid var(--edge-top);
+  box-shadow:
+    inset 0 1px 0 var(--edge-top),
+    var(--lift);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+}
+
+/* Same treatment as .glass, but for chrome that floats over live video or a
+   shared screen rather than over the black ground. backdrop-filter blurs but
+   does not darken, so .glass/.glass-strong's white tint loses contrast over
+   bright content; this dark scrim keeps captions and name pills readable
+   against their own backing regardless of what's underneath. */
+.glass-dark {
+  background: var(--scrim);
+  border: 1px solid var(--edge);
+  box-shadow:
+    inset 0 1px 0 var(--edge-top),
+    var(--lift);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+}
+
+/* The performance switch. backdrop-filter beside nine live <video> elements is
+   expensive; this drops it to a flat fill without touching any component. */
+:root[data-blur='off'] .glass,
+:root[data-blur='off'] .glass-strong,
+:root[data-blur='off'] .glass-dark {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--pane-off);
 }
