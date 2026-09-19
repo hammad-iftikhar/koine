@@ -2,7 +2,9 @@ import { expect, type Page, test } from '@playwright/test'
 
 test('the app loads', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByTestId('app-title')).toHaveText('Koine')
+  await expect(
+    page.getByRole('heading', { name: 'Meetings where nobody switches languages.' }),
+  ).toBeVisible()
 })
 
 test('fake media devices are available to two independent contexts', async ({ browser }) => {
@@ -51,16 +53,30 @@ test('a visitor who is not signed in sees a sign-in button, not an error', async
   await stubMe(page, { user: null })
   await page.goto('/')
 
-  await expect(page.getByTestId('sign-in')).toBeVisible()
-  await expect(page.getByTestId('signed-in')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'New meeting' })).toHaveCount(0)
 })
 
-test('a signed-in visitor sees their email and no sign-in button', async ({ page }) => {
+test('a signed-in visitor sees a way to start a meeting and no sign-in button', async ({
+  page,
+}) => {
   await stubMe(page, {
     user: { id: 'u1', name: 'Mariam', email: 'mariam@example.com', image: null },
   })
   await page.goto('/')
 
-  await expect(page.getByTestId('signed-in')).toContainText('mariam@example.com')
-  await expect(page.getByTestId('sign-in')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'New meeting' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Continue with Google' })).toHaveCount(0)
+})
+
+test('an unknown meeting code is reported, not swallowed', async ({ page }) => {
+  await page.goto('/j/aaa-aaaa-aaa')
+  await expect(page.getByText('Meeting not found')).toBeVisible()
+})
+
+test('a malformed code is rejected before any request is made', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('Meeting code or link').fill('nope')
+  await page.getByRole('button', { name: 'Join' }).click()
+  await expect(page.getByRole('alert')).toContainText(/does not look like a meeting code/i)
 })
