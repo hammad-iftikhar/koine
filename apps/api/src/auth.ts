@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import type { FastifyRequest } from 'fastify'
 import { db } from './db/client'
 import * as schema from './db/schema'
 
@@ -27,3 +28,18 @@ export const auth = betterAuth({
     },
   },
 })
+
+/** Converts Fastify headers into the Headers object Better Auth expects. */
+export function toHeaders(request: FastifyRequest): Headers {
+  const headers = new Headers()
+  for (const [key, value] of Object.entries(request.headers)) {
+    if (typeof value === 'string') headers.set(key, value)
+    else if (Array.isArray(value)) headers.set(key, value.join(', '))
+  }
+  return headers
+}
+
+/** Resolves the caller's Better Auth session, if any, from a Fastify request. */
+export function getSession(request: FastifyRequest) {
+  return auth.api.getSession({ headers: toHeaders(request) })
+}

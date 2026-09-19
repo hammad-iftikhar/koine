@@ -1,8 +1,8 @@
 import cors from '@fastify/cors'
 import Fastify, { type FastifyInstance } from 'fastify'
-import { auth } from './auth'
+import { auth, toHeaders } from './auth'
 import { healthRoutes } from './routes/health'
-import { meRoutes, toHeaders } from './routes/me'
+import { meRoutes } from './routes/me'
 
 const DEFAULT_WEB_ORIGINS = 'http://localhost:5173,http://localhost:4173'
 

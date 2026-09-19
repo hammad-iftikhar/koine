@@ -13,6 +13,12 @@ export default defineConfig({
         process.env.BETTER_AUTH_SECRET ?? 'test_auth_secret_at_least_32_characters',
       GUEST_TOKEN_SECRET:
         process.env.GUEST_TOKEN_SECRET ?? 'test_guest_secret_at_least_32_character',
+      // Silences Better Auth's startup warnings about a missing base URL and
+      // Google credentials — neither is exercised by these tests, but an
+      // unset value logs a warning on every run that imports auth.ts.
+      BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ?? 'test_google_client_id',
+      GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ?? 'test_google_client_secret',
     },
   },
 })
