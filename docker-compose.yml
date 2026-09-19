@@ -82,7 +82,12 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:5173,http://localhost:4173}
-    ports: ["3000:3000"]
+    # Loopback only, deliberately. NODE_ENV: test above opens the x-test-user
+    # header seam, which accepts any user id without authenticating — published
+    # on 0.0.0.0 that is an auth bypass reachable by anyone on the same network
+    # while the dev stack is up. Everything that talks to this API does so from
+    # the host as localhost:3000 (VITE_API_URL, BETTER_AUTH_URL, the e2e specs).
+    ports: ["127.0.0.1:3000:3000"]
     # Sources only. node_modules is image content and nothing is mounted over
     # a path inside another mount: Docker Desktop tears a volume mounted inside
     # a bind mount back down about a second after the container starts, after

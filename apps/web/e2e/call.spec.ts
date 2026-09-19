@@ -19,6 +19,12 @@ import { type Browser, expect, type Page, test } from '@playwright/test'
  */
 const API = process.env.VITE_API_URL ?? 'http://localhost:3000'
 
+// Needs the local docker stack: the API on :3000 to mint a meeting and a token,
+// and the LiveKit SFU to carry the media. CI has neither — no compose project
+// runs there and standing one up belongs to the deployment module — so the file
+// skips itself rather than reporting absent infrastructure as a media failure.
+test.skip(!!process.env.CI, 'needs the local docker stack (API + LiveKit); CI runs neither')
+
 async function createMeeting(request: import('@playwright/test').APIRequestContext) {
   const res = await request.post(`${API}/api/meetings`, {
     data: { floorLang: 'en' },
