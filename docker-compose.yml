@@ -27,7 +27,14 @@ services:
       retries: 10
 
   livekit:
-    image: livekit/livekit-server:v1.8
+    # Must speak the signalling protocol livekit-client publishes with. v1.8
+    # (protocol 16) does not: livekit-client 2.22 negotiates as protocol 17 and
+    # its publisher renegotiation never completes against v1.8, so the first
+    # publish only lands after the client's 15s negotiation timeout forces a
+    # full reconnect. Mute, screen share and anything else that renegotiates
+    # inherit that 15s delay. Keep this at or above the server version the
+    # installed livekit-client targets.
+    image: livekit/livekit-server:v1.9
     command: ["--config", "/etc/livekit.yaml"]
     volumes: ["./docker/livekit.dev.yaml:/etc/livekit.yaml:ro"]
     ports:
