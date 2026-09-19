@@ -98,7 +98,12 @@ services:
       retries: 10
 
   livekit:
-    image: livekit/livekit-server:v1.8
+    # v1.9, not v1.8: livekit-client 2.22 negotiates as protocol 17, which v1.8
+    # does not speak. Against v1.8 the publisher renegotiation after addTrack
+    # never completes, so a first publish only lands once the client's 15s
+    # negotiation timeout forces a reconnect, and mute/screen share inherit
+    # that delay. Keep at or above the server the installed client targets.
+    image: livekit/livekit-server:v1.9
     command: ["--config", "/etc/livekit.yaml"]
     volumes: ["./docker/livekit.dev.yaml:/etc/livekit.yaml:ro"]
     ports:
