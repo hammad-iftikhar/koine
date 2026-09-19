@@ -173,6 +173,32 @@ it('rate limits code lookups', async () => {
   expect(res.json().message).toMatch(/wait a moment/i)
 })
 
+it('rate limits joins in their own bucket, separate from lookups', async () => {
+  const { code } = await createMeeting()
+
+  for (let i = 0; i < 10; i++) {
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/meetings/${code}/join`,
+      payload: { displayName: `Guest ${i}`, speakLang: 'en', hearLang: 'en' },
+    })
+    expect(res.statusCode, `attempt ${i + 1}`).toBe(200)
+  }
+
+  const blocked = await app.inject({
+    method: 'POST',
+    url: `/api/meetings/${code}/join`,
+    payload: { displayName: 'One too many', speakLang: 'en', hearLang: 'en' },
+  })
+  expect(blocked.statusCode).toBe(429)
+  expect(blocked.json().message).toMatch(/wait a moment/i)
+
+  // Proves join and lookup are separate buckets, not one shared counter:
+  // 11 straight joins from this IP have not touched the lookup limiter.
+  const lookup = await app.inject({ method: 'GET', url: `/api/meetings/${code}` })
+  expect(lookup.statusCode).toBe(200)
+})
+
 it('rejects a join with an unknown language', async () => {
   const { code } = await createMeeting()
   const res = await app.inject({
