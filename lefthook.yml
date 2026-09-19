@@ -1,7 +1,7 @@
 pre-commit:
   commands:
     check:
-      glob: "*.{ts,tsx,json,jsonc}"
+      glob: "*.{ts,tsx,json,jsonc,css}"
       run: pnpm biome check --write {staged_files}
       stage_fixed: true
 
