@@ -19,7 +19,14 @@ export function Room() {
   // Keyed by the normalized code, same as PreJoin writes it — a hyphenated
   // or uppercase code in the URL must not miss the key it just wrote.
   const raw = sessionStorage.getItem(`koine:${normalizeMeetingCode(code) ?? code}`)
-  const parsed = raw ? JoinResponse.safeParse(JSON.parse(raw)) : null
+  // sessionStorage is a trust boundary the user can write to: a malformed or
+  // truncated value must take the same fallback as a missing one, not throw.
+  let parsed: ReturnType<typeof JoinResponse.safeParse> | null = null
+  try {
+    parsed = raw ? JoinResponse.safeParse(JSON.parse(raw)) : null
+  } catch {
+    parsed = null
+  }
 
   // Arriving here without credentials means a refresh or a shared URL. Send
   // them through pre-join rather than showing a broken room.

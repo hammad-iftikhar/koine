@@ -4,6 +4,19 @@ import { ParticipantTile } from '../components/ParticipantTile'
 import { ScreenShareTile } from '../components/ScreenShareTile'
 import { type GridEntry, orderTiles } from '../lib/grid'
 
+// One MediaStream per track. Rebuilding it each render hands <video> a new
+// object identity, so the ref callback reassigns srcObject on every tick.
+const streams = new WeakMap<MediaStreamTrack, MediaStream>()
+
+function streamOf(track: MediaStreamTrack | undefined): MediaStream | undefined {
+  if (!track) return undefined
+  const cached = streams.get(track)
+  if (cached) return cached
+  const made = new MediaStream([track])
+  streams.set(track, made)
+  return made
+}
+
 export function RoomGrid() {
   const participants = useParticipants()
   const { localParticipant } = useLocalParticipant()
@@ -23,8 +36,7 @@ export function RoomGrid() {
 
   const streamFor = (identity: string) => {
     const pub = cameraTracks.find((t) => t.participant.identity === identity)
-    const track = pub?.publication?.track
-    return track ? new MediaStream([track.mediaStreamTrack]) : undefined
+    return streamOf(pub?.publication?.track?.mediaStreamTrack)
   }
 
   const mutedFor = (identity: string) =>
@@ -36,11 +48,7 @@ export function RoomGrid() {
         <div className="md:col-span-2">
           <ScreenShareTile
             presenterName={share.participant.name || share.participant.identity}
-            stream={
-              share.publication?.track
-                ? new MediaStream([share.publication.track.mediaStreamTrack])
-                : undefined
-            }
+            stream={streamOf(share.publication?.track?.mediaStreamTrack)}
           />
         </div>
       )}
