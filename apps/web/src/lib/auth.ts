@@ -2,8 +2,6 @@ import { MeResponse } from '@koine/shared'
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from './api'
 
-const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
-
 export function useMe() {
   const query = useQuery({
     queryKey: ['me'],
@@ -13,14 +11,39 @@ export function useMe() {
   return { user: query.data?.user ?? null, isLoading: query.isLoading }
 }
 
-export function signInWithGoogle(callbackURL = window.location.href): void {
-  const url = new URL('/api/auth/sign-in/social', BASE)
-  url.searchParams.set('provider', 'google')
-  url.searchParams.set('callbackURL', callbackURL)
-  window.location.assign(url.toString())
+/**
+ * The app has no toast surface yet, so this is the failure path: say what
+ * broke and what to do about it, rather than leaving a dead button and an
+ * unhandled rejection in the console.
+ */
+function reportFailure(whatFailed: string, error: unknown): void {
+  console.error(`${whatFailed} failed`, error)
+  const detail = error instanceof Error ? error.message : 'Something went wrong.'
+  window.alert(`Could not ${whatFailed}. ${detail} Please check your connection and try again.`)
+}
+
+export async function signInWithGoogle(callbackURL = window.location.href): Promise<void> {
+  try {
+    // A POST, not a navigation: /api/auth/sign-in/social is POST-only, so
+    // sending the browser there with a GET lands on a blank 404. The response
+    // carries the Google URL to hand the browser instead.
+    const { url } = await apiFetch<{ url?: string; redirect?: boolean }>(
+      '/api/auth/sign-in/social',
+      { method: 'POST', body: JSON.stringify({ provider: 'google', callbackURL }) },
+    )
+    if (!url) throw new Error('The server did not return a sign-in link.')
+    window.location.assign(url)
+  } catch (error) {
+    reportFailure('start sign-in with Google', error)
+  }
 }
 
 export async function signOut(): Promise<void> {
-  await apiFetch('/api/auth/sign-out', { method: 'POST', body: '{}' })
+  try {
+    await apiFetch('/api/auth/sign-out', { method: 'POST', body: '{}' })
+  } catch (error) {
+    reportFailure('sign out', error)
+    return
+  }
   window.location.reload()
 }
