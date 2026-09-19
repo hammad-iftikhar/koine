@@ -45,7 +45,8 @@ export const Danger: Story = {
 export const Wide: Story = {
   args: { wide: true, label: 'Leave call' },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByLabelText('Leave call')).toBeInTheDocument()
+    // Dies if the `wide` branch is removed: a non-wide button never gets `w-auto`.
+    await expect(within(canvasElement).getByLabelText('Leave call')).toHaveClass('w-auto')
   },
 }
 
