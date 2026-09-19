@@ -1,8 +1,9 @@
 import { formatMeetingCode } from '@koine/shared'
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest'
 import { buildApp } from '../app'
 import { db } from '../db/client'
-import { user } from '../db/schema'
+import { participant, user } from '../db/schema'
 import { redis } from '../redis'
 
 let app: Awaited<ReturnType<typeof buildApp>>
@@ -26,8 +27,10 @@ beforeAll(async () => {
 beforeEach(async () => {
   // Not redis.flushdb(): vitest runs test files in parallel processes against
   // one Redis database, and rate-limit.test.ts counts on keys that a flush
-  // would zero mid-test. Clear only this file's own keys.
-  const keys = await redis.keys('rl:lookup:*')
+  // would zero mid-test. Clear only this file's own keys — lookup, join and
+  // end are each their own bucket (see enforceRateLimit in meetings.ts).
+  const patterns = ['rl:lookup:*', 'rl:join:*', 'rl:end:*']
+  const keys = (await Promise.all(patterns.map((p) => redis.keys(p)))).flat()
   if (keys.length) await redis.del(...keys)
 })
 afterAll(async () => {
@@ -79,6 +82,15 @@ it('tells the user what to do when the code is unknown', async () => {
   expect(res.json().message).toMatch(/check the code or ask the host for the link/i)
 })
 
+it('answers a malformed code with 404, not a crash', async () => {
+  // Fastify's router decodes '%25' to '%' with its own non-throwing decoder.
+  // A second decodeURIComponent() on that lone '%' throws a URIError — this
+  // proves the route no longer does that second decode.
+  const res = await app.inject({ method: 'GET', url: '/api/meetings/%25' })
+  expect(res.statusCode).toBe(404)
+  expect(res.json().message).toMatch(/check the code or ask the host for the link/i)
+})
+
 it('mints a token and records the languages on join', async () => {
   const { code } = await createMeeting()
   const res = await app.inject({
@@ -96,6 +108,32 @@ it('mints a token and records the languages on join', async () => {
 
   const detail = await app.inject({ method: 'GET', url: `/api/meetings/${code}` })
   expect(detail.json().participants).toHaveLength(1)
+
+  // The roster response only carries {id, displayName} — it cannot prove
+  // the languages reached the row. Read the column directly.
+  const [row] = await db
+    .select({ speakLang: participant.speakLang, hearLang: participant.hearLang })
+    .from(participant)
+    .where(eq(participant.id, body.participantId))
+  expect(row).toEqual({ speakLang: 'es', hearLang: 'en' })
+})
+
+it('round-trips the floor sentinel as hearLang, not a language code', async () => {
+  const { code } = await createMeeting()
+  const res = await app.inject({
+    method: 'POST',
+    url: `/api/meetings/${code}/join`,
+    payload: { displayName: 'Kenji', speakLang: 'ja', hearLang: 'floor' },
+  })
+
+  expect(res.statusCode).toBe(200)
+  const { participantId } = res.json()
+
+  const [row] = await db
+    .select({ hearLang: participant.hearLang })
+    .from(participant)
+    .where(eq(participant.id, participantId))
+  expect(row?.hearLang).toBe('floor')
 })
 
 it('refuses to join an ended meeting', async () => {
@@ -143,4 +181,48 @@ it('rejects a join with an unknown language', async () => {
     payload: { displayName: 'X', speakLang: 'klingon', hearLang: 'en' },
   })
   expect(res.statusCode).toBe(400)
+})
+
+it('refuses to leave through a meeting the participant did not join', async () => {
+  const meetingA = await createMeeting()
+  const meetingB = await createMeeting()
+
+  const joinRes = await app.inject({
+    method: 'POST',
+    url: `/api/meetings/${meetingA.code}/join`,
+    payload: { displayName: 'Ann', speakLang: 'en', hearLang: 'en' },
+  })
+  const { participantId } = joinRes.json()
+
+  // The id is a LiveKit identity, broadcast to every peer — harvesting it in
+  // meeting B's room must not let anyone leave a participant in meeting A.
+  const res = await app.inject({
+    method: 'POST',
+    url: `/api/meetings/${meetingB.code}/leave`,
+    payload: { participantId },
+  })
+  expect(res.statusCode).toBe(404)
+
+  const detail = await app.inject({ method: 'GET', url: `/api/meetings/${meetingA.code}` })
+  expect(detail.json().participants.map((p: { id: string }) => p.id)).toContain(participantId)
+})
+
+it('leaving marks the row and drops it from the roster', async () => {
+  const { code } = await createMeeting()
+  const joinRes = await app.inject({
+    method: 'POST',
+    url: `/api/meetings/${code}/join`,
+    payload: { displayName: 'Ben', speakLang: 'en', hearLang: 'en' },
+  })
+  const { participantId } = joinRes.json()
+
+  const res = await app.inject({
+    method: 'POST',
+    url: `/api/meetings/${code}/leave`,
+    payload: { participantId },
+  })
+  expect(res.statusCode).toBe(200)
+
+  const detail = await app.inject({ method: 'GET', url: `/api/meetings/${code}` })
+  expect(detail.json().participants).toHaveLength(0)
 })

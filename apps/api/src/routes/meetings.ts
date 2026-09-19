@@ -6,7 +6,7 @@ import {
   normalizeMeetingCode,
 } from '@koine/shared'
 import { and, eq, isNull } from 'drizzle-orm'
-import type { FastifyInstance, FastifyRequest } from 'fastify'
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { getSession } from '../auth'
 import { db } from '../db/client'
 import { meeting, participant } from '../db/schema'
@@ -17,6 +17,8 @@ import { consume } from '../rate-limit'
 const LOOKUP_LIMIT = 10
 const LOOKUP_WINDOW = 60
 
+const MEETING_NOT_FOUND = 'Meeting code not found — check the code or ask the host for the link.'
+
 async function currentUserId(request: FastifyRequest): Promise<string | null> {
   // Test seam: skips the OAuth round trip. Never honoured outside tests.
   if (process.env.NODE_ENV === 'test') {
@@ -25,6 +27,19 @@ async function currentUserId(request: FastifyRequest): Promise<string | null> {
   }
   const result = await getSession(request)
   return result?.user?.id ?? null
+}
+
+/**
+ * Same code-guessing defence on every route that takes a meeting code from
+ * an unauthenticated caller: lookup, join and end all leak whether a code
+ * exists (join by inserting, end by 404-vs-403), so all three are throttled
+ * per IP, each in its own bucket.
+ */
+async function enforceRateLimit(request: FastifyRequest, reply: FastifyReply, bucket: string) {
+  const { allowed } = await consume(`${bucket}:${request.ip}`, LOOKUP_LIMIT, LOOKUP_WINDOW)
+  if (!allowed)
+    reply.status(429).send({ message: 'Too many attempts — wait a moment and try again.' })
+  return allowed
 }
 
 export async function meetingRoutes(app: FastifyInstance) {
@@ -56,24 +71,16 @@ export async function meetingRoutes(app: FastifyInstance) {
   })
 
   app.get<{ Params: { code: string } }>('/api/meetings/:code', async (request, reply) => {
-    const ip = request.ip
-    const { allowed } = await consume(`lookup:${ip}`, LOOKUP_LIMIT, LOOKUP_WINDOW)
-    if (!allowed) {
-      return reply.status(429).send({ message: 'Too many attempts — wait a moment and try again.' })
-    }
+    if (!(await enforceRateLimit(request, reply, 'lookup'))) return reply
 
-    const code = normalizeMeetingCode(decodeURIComponent(request.params.code))
+    const code = normalizeMeetingCode(request.params.code)
     if (!code) {
-      return reply.status(404).send({
-        message: 'Meeting code not found — check the code or ask the host for the link.',
-      })
+      return reply.status(404).send({ message: MEETING_NOT_FOUND })
     }
 
     const found = await db.query.meeting.findFirst({ where: eq(meeting.code, code) })
     if (!found) {
-      return reply.status(404).send({
-        message: 'Meeting code not found — check the code or ask the host for the link.',
-      })
+      return reply.status(404).send({ message: MEETING_NOT_FOUND })
     }
 
     const people = await db
@@ -91,11 +98,11 @@ export async function meetingRoutes(app: FastifyInstance) {
   })
 
   app.post<{ Params: { code: string } }>('/api/meetings/:code/join', async (request, reply) => {
+    if (!(await enforceRateLimit(request, reply, 'join'))) return reply
+
     const code = normalizeMeetingCode(request.params.code)
     if (!code) {
-      return reply.status(404).send({
-        message: 'Meeting code not found — check the code or ask the host for the link.',
-      })
+      return reply.status(404).send({ message: MEETING_NOT_FOUND })
     }
 
     const parsed = JoinMeetingBody.safeParse(request.body)
@@ -107,9 +114,7 @@ export async function meetingRoutes(app: FastifyInstance) {
 
     const found = await db.query.meeting.findFirst({ where: eq(meeting.code, code) })
     if (!found) {
-      return reply.status(404).send({
-        message: 'Meeting code not found — check the code or ask the host for the link.',
-      })
+      return reply.status(404).send({ message: MEETING_NOT_FOUND })
     }
     if (found.endedAt) {
       return reply.status(410).send({ message: 'This meeting has ended.' })
@@ -117,6 +122,15 @@ export async function meetingRoutes(app: FastifyInstance) {
 
     const userId = await currentUserId(request)
     const participantId = `p_${randomUUID()}`
+
+    // Minted before the insert: a LiveKit failure here must not leave a
+    // phantom participant row (leftAt: null forever) in the roster and the
+    // meeting marked started for a person who never actually joined.
+    const livekitToken = await mintAccessToken({
+      room: code,
+      identity: participantId,
+      name: parsed.data.displayName,
+    })
 
     await db.insert(participant).values({
       id: participantId,
@@ -131,13 +145,6 @@ export async function meetingRoutes(app: FastifyInstance) {
     if (!found.startedAt) {
       await db.update(meeting).set({ startedAt: new Date() }).where(eq(meeting.id, found.id))
     }
-
-    // Minted only now, after the code resolved and the meeting was confirmed live.
-    const livekitToken = await mintAccessToken({
-      room: code,
-      identity: participantId,
-      name: parsed.data.displayName,
-    })
 
     return {
       livekitToken,
@@ -158,19 +165,46 @@ export async function meetingRoutes(app: FastifyInstance) {
   app.post<{ Params: { code: string }; Body: { participantId?: string } }>(
     '/api/meetings/:code/leave',
     async (request, reply) => {
+      const code = normalizeMeetingCode(request.params.code)
+      if (!code) return reply.status(404).send({ message: MEETING_NOT_FOUND })
+
       const id = request.body?.participantId
       if (!id) return reply.status(400).send({ message: 'Missing participant.' })
-      await db.update(participant).set({ leftAt: new Date() }).where(eq(participant.id, id))
+
+      const found = await db.query.meeting.findFirst({ where: eq(meeting.code, code) })
+      if (!found) return reply.status(404).send({ message: MEETING_NOT_FOUND })
+
+      // No guest-token or session check: the meeting code is the only
+      // credential this route needs. What it must not do is trust the
+      // participant id alone — that id is the LiveKit identity, broadcast to
+      // every peer in the room, so scoping the update to this meeting stops
+      // an id harvested in one meeting from leaving a participant in another.
+      const updated = await db
+        .update(participant)
+        .set({ leftAt: new Date() })
+        .where(
+          and(
+            eq(participant.id, id),
+            eq(participant.meetingId, found.id),
+            isNull(participant.leftAt),
+          ),
+        )
+        .returning({ id: participant.id })
+
+      if (updated.length === 0) return reply.status(404).send({ message: MEETING_NOT_FOUND })
+
       return { ok: true }
     },
   )
 
   app.post<{ Params: { code: string } }>('/api/meetings/:code/end', async (request, reply) => {
+    if (!(await enforceRateLimit(request, reply, 'end'))) return reply
+
     const code = normalizeMeetingCode(request.params.code)
-    if (!code) return reply.status(404).send({ message: 'Meeting code not found.' })
+    if (!code) return reply.status(404).send({ message: MEETING_NOT_FOUND })
 
     const found = await db.query.meeting.findFirst({ where: eq(meeting.code, code) })
-    if (!found) return reply.status(404).send({ message: 'Meeting code not found.' })
+    if (!found) return reply.status(404).send({ message: MEETING_NOT_FOUND })
 
     const userId = await currentUserId(request)
     if (!userId || userId !== found.hostUserId) {
