@@ -6,8 +6,12 @@ export function ConnectionBanner() {
   if (state === ConnectionState.Connected) return null
 
   // An empty grid with no explanation is how a reconnect looks like a crash.
+  // A dropped connection passes through SignalReconnecting (resuming the
+  // signaling websocket) before, if that fails, escalating to Reconnecting
+  // (a full rejoin). Both are "still trying" — only the terminal Disconnected
+  // state means the room actually gave up.
   const message =
-    state === ConnectionState.Reconnecting
+    state === ConnectionState.Reconnecting || state === ConnectionState.SignalReconnecting
       ? 'Reconnecting…'
       : state === ConnectionState.Connecting
         ? 'Joining the meeting…'

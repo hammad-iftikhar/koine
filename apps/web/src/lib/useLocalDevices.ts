@@ -1,4 +1,4 @@
-import { ConnectionState, type Room } from 'livekit-client'
+import type { Room } from 'livekit-client'
 import { useCallback, useState } from 'react'
 
 export async function applyMicState(room: Room | undefined, on: boolean): Promise<void> {
@@ -7,16 +7,6 @@ export async function applyMicState(room: Room | undefined, on: boolean): Promis
 
 export async function applyCameraState(room: Room | undefined, on: boolean): Promise<void> {
   await room?.localParticipant.setCameraEnabled(on)
-}
-
-// A rejection while the room is not cleanly Connected (mid-reconnect, still
-// negotiating, etc.) is exactly the disconnect the user is waiting out, not a
-// real device failure — rolling back here would silently reverse what they
-// asked for. RestoreDeviceState re-applies local state once the room comes
-// back, so trust local state and only roll back a genuine, connected-state
-// failure (the device itself refused).
-function shouldRollBack(room: Room | undefined): boolean {
-  return room?.state === ConnectionState.Connected
 }
 
 // Room.tsx owns this state, above <LiveKitRoom>, so RoomConnection's
@@ -37,7 +27,13 @@ export function useLocalDevices(initial = { mic: true, camera: true }) {
       try {
         await applyMicState(room, next)
       } catch {
-        if (shouldRollBack(room)) {
+        // room.state at catch time proves nothing — LiveKit may not have
+        // noticed a drop yet, so a connection-state check races and loses.
+        // The actual rule has no timing in it: never roll a failed *mute*
+        // back into live, since that is exactly the silent-unmute this hook
+        // exists to prevent. Only a failed unmute (next === true) is safe to
+        // revert — reverting it only ever lands back on muted.
+        if (next) {
           // Only roll back if nothing newer has moved the switch since.
           setMicOn((cur) => (cur === next ? !next : cur))
         }
@@ -53,7 +49,8 @@ export function useLocalDevices(initial = { mic: true, camera: true }) {
       try {
         await applyCameraState(room, next)
       } catch {
-        if (shouldRollBack(room)) {
+        // Same rule as the mic: never roll a failed camera-off back into on.
+        if (next) {
           // Only roll back if nothing newer has moved the switch since.
           setCameraOn((cur) => (cur === next ? !next : cur))
         }
