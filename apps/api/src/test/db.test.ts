@@ -6,25 +6,29 @@ it('gives each caller an empty, isolated database', async () => {
   const a = await withTestDb()
   const b = await withTestDb()
 
-  await a.db.insert(user).values({ id: 'u1', name: 'Alice', email: 'alice@example.com' })
+  try {
+    await a.db.insert(user).values({ id: 'u1', name: 'Alice', email: 'alice@example.com' })
 
-  expect(await a.db.select().from(user)).toHaveLength(1)
-  // If this is 1, the harness is sharing a database and every later test lies.
-  expect(await b.db.select().from(user)).toHaveLength(0)
-
-  await a.destroy()
-  await b.destroy()
+    expect(await a.db.select().from(user)).toHaveLength(1)
+    // If this is 1, the harness is sharing a database and every later test lies.
+    expect(await b.db.select().from(user)).toHaveLength(0)
+  } finally {
+    await a.destroy()
+    await b.destroy()
+  }
 })
 
 it('enforces the unique email constraint', async () => {
   const t = await withTestDb()
-  await t.db.insert(user).values({ id: 'u1', name: 'A', email: 'same@example.com' })
+  try {
+    await t.db.insert(user).values({ id: 'u1', name: 'A', email: 'same@example.com' })
 
-  await expect(
-    t.db.insert(user).values({ id: 'u2', name: 'B', email: 'same@example.com' }),
-  ).rejects.toThrow()
-
-  await t.destroy()
+    await expect(
+      t.db.insert(user).values({ id: 'u2', name: 'B', email: 'same@example.com' }),
+    ).rejects.toThrow()
+  } finally {
+    await t.destroy()
+  }
 })
 
 it('resolves foreign keys inside the isolated database', async () => {

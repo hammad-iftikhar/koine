@@ -37,6 +37,12 @@ export async function buildApp(
     // Without this line every caller shares one rate-limit bucket, so a
     // single attacker locks everyone out of sign-in. set() overwrites rather
     // than appends, so a client cannot spoof its way into a fresh bucket.
+    // Correct only because the API is exposed directly and Fastify's
+    // `trustProxy` is off, so request.ip is always the real peer address.
+    // Putting this behind an ingress or load balancer means turning
+    // `trustProxy` on AND switching this to read the trusted hop off the
+    // inbound x-forwarded-for via Better Auth's advanced.ipAddress.trustedProxies
+    // in the same change — otherwise every user again collapses into one bucket.
     headers.set('x-forwarded-for', request.ip)
 
     const response = await auth.handler(
