@@ -30,14 +30,20 @@ it('publishes a segment carrying the original and every channel translation', as
   expect(client.translate).toHaveBeenCalledTimes(1)
 })
 
-it('does not call the translator when no channel is active', async () => {
-  // Everyone hears the floor language. Calling OpenAI here is money for nothing.
+it('calls no OpenAI endpoint at all when no channel is active', async () => {
+  // Everyone hears the floor language. Calling OpenAI here is money for
+  // nothing — and the transcription is the expensive half, billed once per
+  // speaker per window for a segment nothing downstream would render.
   const bus = createBus()
+  const seen: CaptionSegment[] = []
+  bus.subscribe('room-a', (s) => seen.push(s))
   const client = stubClient()
   const transcriber = createTranscriber({ client, bus, channels: () => [] })
 
   await transcriber.onAudio('room-a', 'p_1', Buffer.from('audio'), 'es')
+  expect(client.transcribe).not.toHaveBeenCalled()
   expect(client.translate).not.toHaveBeenCalled()
+  expect(seen).toHaveLength(0)
 })
 
 it('still publishes captions when translation fails', async () => {

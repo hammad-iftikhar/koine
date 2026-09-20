@@ -16,6 +16,16 @@ export function createTranscriber(deps: {
       audio: Buffer,
       sourceLang: string,
     ): Promise<void> {
+      // Before the transcription, not after it. The worker is dispatched to
+      // every room in the LiveKit project, so a room where everyone hears the
+      // floor language would otherwise call OpenAI's transcription endpoint
+      // once per speaker per window to produce a segment with no translations
+      // in it — which no client renders and the synthesizer discards. Plan 06
+      // is explicit: a room with everyone on the floor language creates zero
+      // channels and makes zero OpenAI calls.
+      const targets = deps.channels()
+      if (targets.length === 0) return
+
       let original: string
       try {
         original = await deps.client.transcribe(audio, sourceLang)
@@ -27,17 +37,13 @@ export function createTranscriber(deps: {
 
       if (!original.trim()) return
 
-      const targets = deps.channels()
       let translations: Record<string, string> = {}
-
-      if (targets.length > 0) {
-        try {
-          translations = await deps.client.translate(original, sourceLang, targets)
-        } catch (error) {
-          // Captions still go out with the original. Showing what was said beats
-          // showing nothing because the translator was rate limited.
-          console.error(`transcriber: translation failed in ${roomId}`, error)
-        }
+      try {
+        translations = await deps.client.translate(original, sourceLang, targets)
+      } catch (error) {
+        // Captions still go out with the original. Showing what was said beats
+        // showing nothing because the translator was rate limited.
+        console.error(`transcriber: translation failed in ${roomId}`, error)
       }
 
       const segment: CaptionSegment = {

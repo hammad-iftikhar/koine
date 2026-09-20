@@ -11,6 +11,7 @@
  * says which of them talks to which, and hands the result to LiveKit Agents.
  */
 import { fileURLToPath } from 'node:url'
+import { TRANSLATION_PREFIX } from '@koine/shared'
 import {
   AutoSubscribe,
   cli,
@@ -22,6 +23,7 @@ import {
 import {
   type AudioFrame,
   AudioStream,
+  ParticipantKind,
   type RemoteParticipant,
   type RemoteTrack,
   type RemoteTrackPublication,
@@ -120,6 +122,15 @@ export default defineAgent({
       RoomEvent.TrackSubscribed,
       (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
         if (publication.source !== TrackSource.SOURCE_MICROPHONE) return
+        // Never transcribe another worker's output. `tracks.ts` publishes
+        // tr:<lang> *as* a microphone source — LiveKit has no source kind for
+        // synthesized speech — so the source check above does not exclude it.
+        // Two workers in one room is not hypothetical: it is the failover
+        // window, when LiveKit has replaced a partitioned worker that has not
+        // died yet. Each would transcribe the other's translation and
+        // re-translate it, a feedback loop billed to OpenAI both ways.
+        if (participant.kind === ParticipantKind.AGENT) return
+        if (publication.name?.startsWith(TRANSLATION_PREFIX)) return
         // Cast because this package compiles with the DOM lib, whose
         // ReadableStream is not typed as async iterable; Node's is, at runtime.
         const frames = new AudioStream(track, {
