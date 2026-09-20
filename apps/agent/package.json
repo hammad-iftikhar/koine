@@ -8,7 +8,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@koine/shared": "workspace:*"
+    "@koine/shared": "workspace:*",
+    "openai": "^7.19.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
