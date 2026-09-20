@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@koine/shared": "workspace:*",
+    "ioredis": "^6.0.0",
     "openai": "^7.19.0"
   },
   "devDependencies": {
