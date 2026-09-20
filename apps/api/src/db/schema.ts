@@ -1,4 +1,4 @@
-import { boolean, index, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { boolean, index, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 // Better Auth's required shape. Generated once, then committed — do not
 // hand-edit column names, the library looks them up by name.
@@ -86,4 +86,28 @@ export const participant = pgTable(
     leftAt: timestamp('left_at'),
   },
   (t) => ({ liveIdx: index('participant_live_idx').on(t.meetingId, t.leftAt) }),
+)
+
+export const message = pgTable(
+  'message',
+  {
+    id: text('id').primaryKey(),
+    meetingId: text('meeting_id')
+      .notNull()
+      .references(() => meeting.id, { onDelete: 'cascade' }),
+    participantId: text('participant_id')
+      .notNull()
+      .references(() => participant.id, { onDelete: 'cascade' }),
+    /** Exactly as typed. Never overwritten by a translation. */
+    body: text('body').notNull(),
+    lang: text('lang').notNull(),
+    /**
+     * language code → translated text, filled lazily and cached.
+     * jsonb rather than a side table: messages are short, the key set is bounded
+     * by the room's languages, and a join buys nothing here.
+     */
+    translations: jsonb('translations').notNull().default({}),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => ({ orderIdx: index('message_order_idx').on(t.meetingId, t.createdAt) }),
 )
