@@ -143,6 +143,22 @@ only, push-to-talk turn-taking, or accepting a briefing-shaped product. All thre
 are product decisions, not engineering ones, and they must be raised rather than
 absorbed.
 
+### Measurement outcome
+
+The latency measurement was not run. The OpenAI API key was not available at implementation time, and real recorded Spanish speech fixtures were not sourced; synthesized speech would not reflect actual recognition latency and would flatter the performance of the recognition stage.
+
+The implementation therefore proceeds with the cascade pipeline. The plan is written for cascade; it produces the transcript that captions need anyway. This is a default chosen in the absence of a measurement, not a result of one.
+
+When the spike is finally run with a key and real fixtures, apply this decision rule:
+
+| p90 first byte | Decision |
+|---|---|
+| under 1.5 s | Proceed. Use whichever pipeline measured faster. |
+| 1.5 – 2.5 s | Proceed with the faster pipeline, note that the budget is tight. |
+| over 2.5 s | Stop and raise it. The options are captions-only, push-to-talk turn-taking, or accepting a briefing-shaped product. This is a product decision, not an engineering one. |
+
+Record the OpenAI models used (`OPENAI_STT_MODEL`, `OPENAI_TRANSLATE_MODEL`, `OPENAI_TTS_MODEL`) alongside the latency numbers when the measurement runs. Until then, the models in use are whatever those environment variables are set to.
+
 ## Mixing at the listener
 
 The listener hears the translated voice at full level with the original floor
