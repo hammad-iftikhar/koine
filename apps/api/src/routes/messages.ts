@@ -1,10 +1,32 @@
 import { randomUUID } from 'node:crypto'
 import { FLOOR, normalizeMeetingCode, SendMessageBody } from '@koine/shared'
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, sql } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 import { db } from '../db/client'
 import { meeting, message, participant } from '../db/schema'
 import { getTranslator } from '../translate'
+
+/**
+ * Merges one freshly translated language into the row's cached `translations`
+ * at the SQL level (`translations || produced::jsonb`) instead of reading the
+ * column into JS, mutating a local copy, and writing the whole column back.
+ * Two concurrent readers wanting different uncached languages for the same
+ * message both start from the same SELECT snapshot; if either wrote its
+ * in-memory copy back wholesale, whichever write landed second would
+ * silently discard the language the first one had just cached. `||` reads
+ * Postgres's live column value at UPDATE time, not a JS variable, so
+ * whichever write lands second still keeps what the first one added.
+ * `produced` is passed as a bound parameter, never spliced into the SQL text.
+ */
+export async function cacheTranslation(
+  rowId: string,
+  produced: Record<string, string>,
+): Promise<void> {
+  await db
+    .update(message)
+    .set({ translations: sql`${message.translations} || ${JSON.stringify(produced)}::jsonb` })
+    .where(eq(message.id, rowId))
+}
 
 export async function messageRoutes(app: FastifyInstance) {
   app.post<{ Params: { code: string } }>('/api/meetings/:code/messages', async (request, reply) => {
@@ -77,37 +99,58 @@ export async function messageRoutes(app: FastifyInstance) {
         .orderBy(asc(message.createdAt))
 
       const hear = request.query.hear
-      const out = []
 
-      for (const row of rows) {
-        const translations = (row.translations ?? {}) as Record<string, string>
+      // Per-row translations for THIS response: seeded from the SELECT
+      // snapshot, then filled in below as translations complete. Kept
+      // separate from what gets persisted — the response must show the
+      // translation this request just produced even though the row it read
+      // is a point-in-time snapshot.
+      const translationsByRow = new Map<string, Record<string, string>>(
+        rows.map((row) => [row.id, { ...((row.translations ?? {}) as Record<string, string>) }]),
+      )
 
-        // Translate lazily, once per language, and cache on the row. Skip
-        // when the reader already shares the author's language, and skip
-        // FLOOR — it means "original audio", not a language to translate
-        // into, and asking the translator for it would burn a call and
-        // cache junk on the row.
-        if (hear && hear !== row.lang && hear !== FLOOR && !translations[hear]) {
-          try {
-            const produced = await getTranslator().translate(row.body, row.lang, [hear])
-            Object.assign(translations, produced)
-            await db.update(message).set({ translations }).where(eq(message.id, row.id))
-          } catch (error) {
-            // The message is never hidden because it could not be translated.
-            request.log.error?.({ error }, 'chat translation failed')
-          }
-        }
+      // Translate lazily, once per (message, language), and cache on the
+      // row. Skip when the reader already shares the author's language,
+      // skip FLOOR — it means "original audio", not a language to translate
+      // into — and skip anything already cached.
+      //
+      // Run the uncached rows concurrently rather than one at a time: the
+      // translator interface is unchanged (still one call per row), but
+      // awaiting them in series meant a late joiner who is the first reader
+      // in a language paid backlog-size x per-call latency in a single
+      // blocking response. No cap on the concurrency here — the row set is
+      // one meeting's chat history, not an unbounded batch.
+      await Promise.all(
+        rows
+          .filter(
+            (row) =>
+              hear !== undefined &&
+              hear !== row.lang &&
+              hear !== FLOOR &&
+              !translationsByRow.get(row.id)?.[hear],
+          )
+          .map(async (row) => {
+            try {
+              const produced = await getTranslator().translate(row.body, row.lang, [hear as string])
+              if (Object.keys(produced).length === 0) return
+              Object.assign(translationsByRow.get(row.id) as Record<string, string>, produced)
+              await cacheTranslation(row.id, produced)
+            } catch (error) {
+              // The message is never hidden because it could not be translated.
+              request.log.error?.({ error }, 'chat translation failed')
+            }
+          }),
+      )
 
-        out.push({
-          id: row.id,
-          author: row.author,
-          participantId: row.participantId,
-          body: row.body,
-          lang: row.lang,
-          translations,
-          createdAt: row.createdAt.toISOString(),
-        })
-      }
+      const out = rows.map((row) => ({
+        id: row.id,
+        author: row.author,
+        participantId: row.participantId,
+        body: row.body,
+        lang: row.lang,
+        translations: translationsByRow.get(row.id) ?? {},
+        createdAt: row.createdAt.toISOString(),
+      }))
 
       return { messages: out, nextCursor: null }
     },
