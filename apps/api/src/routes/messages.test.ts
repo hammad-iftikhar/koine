@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { buildApp } from '../app'
 import { db } from '../db/client'
-import { message } from '../db/schema'
+import { message, user } from '../db/schema'
 import { setTranslator } from '../translate'
 import { cacheTranslation } from './messages'
 
@@ -24,6 +24,16 @@ const translate = vi.fn(defaultTranslateImpl)
 const TEST_REMOTE_ADDRESS = `10.${randomInt(1, 255)}.${randomInt(1, 255)}.${randomInt(1, 255)}`
 
 beforeAll(async () => {
+  // meeting.host_user_id is a real foreign key, so the x-test-user identity
+  // below needs a backing row or every POST /api/meetings 500s and each
+  // request that follows 404s on an undefined code. meetings.test.ts seeds
+  // the same row, but test files run in parallel processes — this file
+  // cannot wait for that one. onConflictDoNothing makes both safe.
+  await db
+    .insert(user)
+    .values({ id: 'u_host', name: 'u_host', email: 'u_host@test.invalid' })
+    .onConflictDoNothing()
+
   setTranslator({ translate })
   app = await buildApp()
   await app.ready()
