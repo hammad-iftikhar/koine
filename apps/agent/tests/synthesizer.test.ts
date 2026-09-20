@@ -1,7 +1,7 @@
 import type { CaptionSegment } from '@koine/shared'
 import { expect, it, vi } from 'vitest'
-import { createBus } from './bus'
-import { createSynthesizer } from './synthesizer'
+import { createBus } from '@/bus'
+import { createSynthesizer } from '@/synthesizer'
 
 const segment = (translations: Record<string, string>): CaptionSegment => ({
   speakerIdentity: 'p_1',

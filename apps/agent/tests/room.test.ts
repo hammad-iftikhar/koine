@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest'
-import { createChannelState } from './room'
+import { createChannelState } from '@/room'
 
 it('rebuilds the channel set from the database, not from client state', async () => {
   // This is what makes failover work: a replacement worker asks Postgres, and

@@ -1,6 +1,6 @@
 import { ParticipantKind } from 'livekit-client'
 import { describe, expect, it } from 'vitest'
-import { withoutAgents } from './participants'
+import { withoutAgents } from '@/lib/participants'
 
 const person = (identity: string, kind: ParticipantKind = ParticipantKind.STANDARD) => ({
   identity,

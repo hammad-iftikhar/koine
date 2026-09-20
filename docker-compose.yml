@@ -60,7 +60,7 @@ services:
     environment:
       # Compose is the dev and e2e stack; this turns on the x-test-user seam
       # that the e2e specs authenticate through (see currentUserId in
-      # apps/api/src/routes/meetings.ts). Production deployment is module
+      # apps/api/src/modules/meeting/meeting.controller.ts). Production deployment is module
       # 08's problem.
       NODE_ENV: test
       DATABASE_URL: postgres://koine:koine@postgres:5432/koine

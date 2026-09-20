@@ -1,11 +1,11 @@
 import { FLOOR, type LanguageCode, normalizeMeetingCode } from '@koine/shared'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { DevicePreview } from '../components/DevicePreview'
-import { LanguagePicker } from '../components/LanguagePicker'
-import { ApiError } from '../lib/api'
-import { useMe } from '../lib/auth'
-import { useJoinMeeting, useMeeting } from '../lib/meetings'
+import { DevicePreview } from '@/components/DevicePreview'
+import { LanguagePicker } from '@/components/LanguagePicker'
+import { ApiError } from '@/lib/api'
+import { useMe } from '@/lib/auth'
+import { useJoinMeeting, useMeeting } from '@/lib/meetings'
 
 export function PreJoin() {
   const { code = '' } = useParams()

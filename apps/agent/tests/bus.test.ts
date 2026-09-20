@@ -1,6 +1,6 @@
 import type { CaptionSegment } from '@koine/shared'
 import { expect, it, vi } from 'vitest'
-import { createBus } from './bus'
+import { createBus } from '@/bus'
 
 const segment = (over: Partial<CaptionSegment> = {}): CaptionSegment => ({
   speakerIdentity: 'p_1',

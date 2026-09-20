@@ -1,8 +1,8 @@
 import { useRoomContext } from '@livekit/components-react'
 import { type RemoteTrack, RoomEvent } from 'livekit-client'
 import { useEffect, useRef } from 'react'
-import { createDucker } from '../lib/ducking'
-import { type AudioSink, syncAudio, wantedChannel } from '../lib/translation-audio'
+import { createDucker } from '@/lib/ducking'
+import { type AudioSink, syncAudio, wantedChannel } from '@/lib/translation-audio'
 
 /** Room events that can change which channel exists or whether it is live. */
 const RESYNC_ON = [

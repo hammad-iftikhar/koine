@@ -2,7 +2,9 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, it } from 'vitest'
 
-const COMPONENTS = join(import.meta.dirname, '..', 'components')
+// This test reads component sources off disk, so it needs a real path, not
+// the `@/` alias — the alias is a module specifier and resolves nothing here.
+const COMPONENTS = join(import.meta.dirname, '..', '..', 'src', 'components')
 
 // A hex literal is a colour that escaped the token file.
 const HEX = /#[0-9a-fA-F]{3,8}\b/g

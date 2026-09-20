@@ -2,7 +2,7 @@ import type { JoinResponse } from '@koine/shared'
 import { LiveKitRoom, useRoomContext } from '@livekit/components-react'
 import { RoomEvent } from 'livekit-client'
 import { type ReactNode, useEffect } from 'react'
-import { applyCameraState, applyMicState } from '../lib/useLocalDevices'
+import { applyCameraState, applyMicState } from '@/lib/useLocalDevices'
 
 function RestoreDeviceState({ micOn, cameraOn }: { micOn: boolean; cameraOn: boolean }) {
   const room = useRoomContext()

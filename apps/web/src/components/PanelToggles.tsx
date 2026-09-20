@@ -1,5 +1,5 @@
 import { Globe, Info, MessageSquare, Users } from 'lucide-react'
-import { cn } from '../lib/cn'
+import { cn } from '@/lib/cn'
 
 export type PanelName = 'details' | 'people' | 'chat' | 'languages'
 

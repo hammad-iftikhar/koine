@@ -1,9 +1,9 @@
 import { useLocalParticipant, useParticipants, useTracks } from '@livekit/components-react'
 import { Track } from 'livekit-client'
-import { ParticipantTile } from '../components/ParticipantTile'
-import { ScreenShareTile } from '../components/ScreenShareTile'
-import { type GridEntry, orderTiles } from '../lib/grid'
-import { withoutAgents } from '../lib/participants'
+import { ParticipantTile } from '@/components/ParticipantTile'
+import { ScreenShareTile } from '@/components/ScreenShareTile'
+import { type GridEntry, orderTiles } from '@/lib/grid'
+import { withoutAgents } from '@/lib/participants'
 
 // One MediaStream per track. Rebuilding it each render hands <video> a new
 // object identity, so the ref callback reassigns srcObject on every tick.

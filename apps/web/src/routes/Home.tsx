@@ -2,9 +2,9 @@ import { formatMeetingCode, normalizeMeetingCode } from '@koine/shared'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { JoinCodeField } from '../components/JoinCodeField'
-import { signInWithGoogle, useMe } from '../lib/auth'
-import { useCreateMeeting } from '../lib/meetings'
+import { JoinCodeField } from '@/components/JoinCodeField'
+import { signInWithGoogle, useMe } from '@/lib/auth'
+import { useCreateMeeting } from '@/lib/meetings'
 
 export function Home() {
   const { user } = useMe()

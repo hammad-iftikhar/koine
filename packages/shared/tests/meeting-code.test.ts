@@ -4,7 +4,7 @@ import {
   formatMeetingCode,
   generateMeetingCode,
   normalizeMeetingCode,
-} from './meeting-code'
+} from '@/meeting-code'
 
 describe('generateMeetingCode', () => {
   it('produces the xxx-xxxx-xxx shape', () => {

@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest'
-import { createUtteranceBuffer, wavFromPcm } from './audio'
+import { createUtteranceBuffer, wavFromPcm } from '@/audio'
 
 it('wraps PCM in a WAV header that describes the bytes honestly', () => {
   // openai.ts uploads these bytes as audio/wav, so the header has to be real.

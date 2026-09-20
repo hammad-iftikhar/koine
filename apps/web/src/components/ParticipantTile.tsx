@@ -1,6 +1,6 @@
 import { MicOff } from 'lucide-react'
-import { cn } from '../lib/cn'
-import { useVideoStream } from '../lib/useVideoStream'
+import { cn } from '@/lib/cn'
+import { useVideoStream } from '@/lib/useVideoStream'
 import { SpeakingBars } from './SpeakingBars'
 
 export type ParticipantTileProps = {

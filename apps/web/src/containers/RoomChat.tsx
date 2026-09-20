@@ -3,9 +3,9 @@ import { useRoomContext } from '@livekit/components-react'
 import { type RemoteParticipant, RoomEvent } from 'livekit-client'
 import { AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ChatPanel } from '../components/ChatPanel'
-import { apiFetch } from '../lib/api'
-import { decodeChatMessage } from '../lib/chat-messages'
+import { ChatPanel } from '@/components/ChatPanel'
+import { apiFetch } from '@/lib/api'
+import { decodeChatMessage } from '@/lib/chat-messages'
 
 const CHAT_TOPIC = 'chat'
 

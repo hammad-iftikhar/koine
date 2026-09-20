@@ -35,3 +35,25 @@ a dependency.
 | `pnpm test` | Unit and component tests |
 | `pnpm --filter @koine/web storybook` | Storybook on port 6006 |
 | `pnpm --filter @koine/web e2e` | Playwright end-to-end tests |
+
+## Layout and conventions
+
+```
+apps/api/src/modules/<feature>/<feature>.{route,controller,repository}.ts
+apps/api/tests/modules/<feature>/<feature>.route.test.ts
+```
+
+- **Imports.** `@/` is the package's own `src/`, `@tests/` its own `tests/`.
+  Anything leaving its directory uses the alias; same-directory imports stay
+  relative. See [decision 0001](docs/decisions/0001-path-alias-for-cross-directory-imports.md).
+- **Tests.** One `tests/` folder per package, mirroring `src/`. Storybook
+  stories stay beside their components. See [decision 0002](docs/decisions/0002-tests-in-a-per-package-tests-folder.md).
+- **API modules.** Routes register URLs, controllers hold the rules, repositories
+  hold the SQL. See [decision 0003](docs/decisions/0003-route-controller-repository-modules.md).
+
+## Decisions
+
+Anything non-obvious about how this works is written down in
+[`docs/decisions/`](docs/decisions/README.md) — why the LiveKit room is not the
+meeting code, why the rate limiter fails open, why test databases are template
+clones. Read it before "fixing" something that looks wrong.

@@ -1,5 +1,5 @@
 import { Mic, MicOff, Video, VideoOff } from 'lucide-react'
-import { useVideoStream } from '../lib/useVideoStream'
+import { useVideoStream } from '@/lib/useVideoStream'
 import { ControlButton } from './ControlButton'
 import { SpeakingBars } from './SpeakingBars'
 

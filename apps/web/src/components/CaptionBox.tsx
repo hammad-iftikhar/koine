@@ -1,5 +1,5 @@
 import { Globe } from 'lucide-react'
-import { cn } from '../lib/cn'
+import { cn } from '@/lib/cn'
 
 /**
  * Where the caption box sits on the stage.

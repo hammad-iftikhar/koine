@@ -1,6 +1,6 @@
 import type { ChatMessageDTO } from '@koine/shared'
 import { expect, it } from 'vitest'
-import { decodeChatMessage } from './chat-messages'
+import { decodeChatMessage } from '@/lib/chat-messages'
 
 const MESSAGE: ChatMessageDTO = {
   id: 'm_1',

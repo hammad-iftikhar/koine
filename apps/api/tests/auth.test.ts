@@ -1,7 +1,7 @@
+import { withTestDb } from '@tests/helpers/db'
 import { afterAll, beforeAll, expect, it, vi } from 'vitest'
-import { buildApp } from './app'
-import { createAuth } from './auth'
-import { withTestDb } from './test/db'
+import { buildApp } from '@/app'
+import { createAuth } from '@/auth'
 
 let app: Awaited<ReturnType<typeof buildApp>>
 let testDb: Awaited<ReturnType<typeof withTestDb>>

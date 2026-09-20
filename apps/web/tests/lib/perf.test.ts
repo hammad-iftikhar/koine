@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, it } from 'vitest'
-import { isBlurEnabled, setBlurEnabled } from './perf'
+import { isBlurEnabled, setBlurEnabled } from '@/lib/perf'
 
 beforeEach(() => {
   document.documentElement.removeAttribute('data-blur')

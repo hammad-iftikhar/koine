@@ -1,7 +1,7 @@
 import type { CaptionSegment } from '@koine/shared'
 import { ParticipantKind } from 'livekit-client'
 import { expect, it } from 'vitest'
-import { decodeCaption } from './captions'
+import { decodeCaption } from '@/lib/captions'
 
 const AGENT = { kind: ParticipantKind.AGENT }
 const PERSON = { kind: ParticipantKind.STANDARD }

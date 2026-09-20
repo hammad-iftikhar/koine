@@ -4,7 +4,7 @@
 // override for the same reason.
 import { act, renderHook } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
-import { applyCameraState, applyMicState, useLocalDevices } from './useLocalDevices'
+import { applyCameraState, applyMicState, useLocalDevices } from '@/lib/useLocalDevices'
 
 function fakeRoom() {
   const setMicrophoneEnabled = vi.fn(async () => {})

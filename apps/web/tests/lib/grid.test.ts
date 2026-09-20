@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type GridEntry, orderTiles } from './grid'
+import { type GridEntry, orderTiles } from '@/lib/grid'
 
 const person = (identity: string, over: Partial<GridEntry> = {}): GridEntry => ({
   identity,

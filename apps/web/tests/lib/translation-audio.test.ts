@@ -5,7 +5,7 @@ import {
   type SyncablePublication,
   syncAudio,
   wantedChannel,
-} from './translation-audio'
+} from '@/lib/translation-audio'
 
 type FakePublication = SyncablePublication & { asked: boolean[] }
 

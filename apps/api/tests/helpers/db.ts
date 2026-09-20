@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import * as schema from '../db/schema'
+import * as schema from '@/db/schema'
 
 const BASE = process.env.DATABASE_URL ?? 'postgres://koine:koine@localhost:5432/koine'
 

@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest'
-import { createDucker, DUCK_GAIN } from './ducking'
+import { createDucker, DUCK_GAIN } from '@/lib/ducking'
 
 function fakeContext() {
   // `connect` is part of the fake because a real GainNode is wired to the

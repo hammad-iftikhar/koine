@@ -1,4 +1,4 @@
-import { useVideoStream } from '../lib/useVideoStream'
+import { useVideoStream } from '@/lib/useVideoStream'
 
 export type ScreenShareTileProps = { presenterName: string; stream?: MediaStream }
 

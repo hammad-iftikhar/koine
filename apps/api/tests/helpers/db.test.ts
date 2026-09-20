@@ -1,6 +1,6 @@
+import { withTestDb } from '@tests/helpers/db'
 import { expect, it } from 'vitest'
-import { session, user } from '../db/schema'
-import { withTestDb } from './db'
+import { session, user } from '@/db/schema'
 
 it('gives each caller an empty, isolated database', async () => {
   const a = await withTestDb()

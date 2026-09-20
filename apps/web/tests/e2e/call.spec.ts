@@ -4,7 +4,7 @@ import { type Browser, expect, type Page, test } from '@playwright/test'
  * Leave ~60s between consecutive runs of this file.
  *
  * `GET /api/meetings/:code` is rate limited to 10 lookups per 60s per IP
- * (`LOOKUP_LIMIT` in `apps/api/src/routes/meetings.ts`), and every browser here
+ * (`LOOKUP_LIMIT` in `apps/api/src/guards.ts`), and every browser here
  * reaches the API as the same Docker gateway address, so the whole file shares
  * one bucket. One run spends 8 of the 10 — four tests, two browsers each, one
  * pre-join lookup apiece (measured: the bucket reads 8 after a run from a clean
