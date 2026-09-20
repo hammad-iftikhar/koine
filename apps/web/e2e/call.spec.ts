@@ -116,4 +116,23 @@ test.describe('a real call between two browsers', () => {
     await alice.close()
     await bob.close()
   })
+
+  test('a message sent by one participant arrives for the other', async ({ browser, request }) => {
+    const code = await createMeeting(request)
+    const alice = await join(browser, code, 'Alice')
+    const bob = await join(browser, code, 'Bob')
+
+    await expect(bob.getByText('Alice')).toBeVisible({ timeout: 15_000 })
+
+    await alice.getByLabel('Chat').click()
+    await bob.getByLabel('Chat').click()
+
+    await alice.getByLabel('Send a message').fill('Slide 4 is the one')
+    await alice.getByLabel('Send a message').press('Enter')
+
+    await expect(bob.getByText('Slide 4 is the one')).toBeVisible({ timeout: 10_000 })
+
+    await alice.close()
+    await bob.close()
+  })
 })
