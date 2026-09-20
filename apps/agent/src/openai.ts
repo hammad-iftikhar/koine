@@ -119,6 +119,15 @@ export function createOpenAIClient(): TranslationClient {
         input: text,
         voice: 'alloy',
         instructions: `Speak naturally in ${lang}.`,
+        // R9: raw PCM rather than the default mp3. These bytes are captured
+        // straight into a LiveKit AudioSource, and decoding mp3 first would
+        // spend a temp file and an ffmpeg process per utterance against a
+        // 400 ms synthesis budget. OpenAI documents `pcm` as "raw samples in
+        // 24kHz (16-bit signed, low-endian), without the header"
+        // (developers.openai.com/api/docs/guides/text-to-speech), single
+        // channel. Headerless means the bytes carry none of that, so the
+        // agreement lives here and in tracks.ts's TTS_SAMPLE_RATE.
+        response_format: 'pcm',
       })
       const arrayBuffer = await speech.arrayBuffer()
       return Buffer.from(arrayBuffer)

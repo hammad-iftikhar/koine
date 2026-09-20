@@ -30,10 +30,10 @@ import {
 } from '@livekit/rtc-node'
 import Redis from 'ioredis'
 import postgres from 'postgres'
-import { createUtteranceBuffer } from './audio'
 import { createBus } from './bus'
+import { createIngest } from './ingest'
 import { createOpenAIClient } from './openai'
-import { createChannelState, createRosterLoader, speakerLang } from './room'
+import { createChannelState, createRosterLoader } from './room'
 import { createSpendTracker } from './spend'
 import { createSynthesizer } from './synthesizer'
 import { createTranslationTracks } from './tracks'
@@ -61,6 +61,18 @@ if (missing.length > 0) {
 /** What microphone audio is decoded to before it is uploaded for transcription. */
 const INGEST_SAMPLE_RATE = 16_000
 const INGEST_WINDOW_MS = 4_000
+
+/**
+ * How often the channel set is rebuilt regardless of events.
+ *
+ * Two holes nothing else covers: a first refresh that failed would otherwise
+ * leave the room with no channels for its whole life, and a participant
+ * switching their hearLang mid-meeting produces no LiveKit event at all. Half
+ * a minute is a tolerable wait for a new language and one indexed query per
+ * room per 30s is nothing; a tighter interval would buy latency nobody asked
+ * for at the cost of a steady query load per live room.
+ */
+const CHANNEL_REFRESH_MS = 30_000
 
 const client = createOpenAIClient()
 const bus = createBus()
@@ -90,27 +102,12 @@ export default defineAgent({
       spend,
       publishAudio: (audio, lang) => tracks.publish(audio, lang),
     })
-
-    async function transcribe(participant: RemoteParticipant, track: RemoteTrack) {
-      // Per track, because the roster is where a speaker's language lives and
-      // a participant can join after the last refresh.
-      const sourceLang = speakerLang(await loadRoster(roomId), participant.identity)
-      const utterances = createUtteranceBuffer({
-        sampleRate: INGEST_SAMPLE_RATE,
-        windowMs: INGEST_WINDOW_MS,
-        onUtterance: (wav) =>
-          void transcriber.onAudio(roomId, participant.identity, wav, sourceLang),
-      })
-
-      // Cast because this package compiles with the DOM lib, whose
-      // ReadableStream is not typed as async iterable; Node's is, at runtime.
-      const frames = new AudioStream(track, {
-        sampleRate: INGEST_SAMPLE_RATE,
-        numChannels: 1,
-      }) as unknown as AsyncIterable<AudioFrame>
-      for await (const frame of frames) utterances.push(frame)
-      utterances.flush()
-    }
+    const ingest = createIngest({
+      loadRoster,
+      transcriber,
+      sampleRate: INGEST_SAMPLE_RATE,
+      windowMs: INGEST_WINDOW_MS,
+    })
 
     // Listeners before connecting: a participant who joins in the gap would
     // otherwise never reach the channel set.
@@ -121,21 +118,45 @@ export default defineAgent({
       RoomEvent.TrackSubscribed,
       (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
         if (publication.source !== TrackSource.SOURCE_MICROPHONE) return
+        // Cast because this package compiles with the DOM lib, whose
+        // ReadableStream is not typed as async iterable; Node's is, at runtime.
+        const frames = new AudioStream(track, {
+          sampleRate: INGEST_SAMPLE_RATE,
+          numChannels: 1,
+        }) as unknown as AsyncIterable<AudioFrame>
+
         // Translation is an enhancement layer: a failure here is logged and the
         // call carries on untranslated.
-        transcribe(participant, track).catch((error) =>
-          console.error(`agent: transcription stopped for ${participant.identity}`, error),
-        )
+        ingest
+          .listen(roomId, participant.identity, frames)
+          .catch((error) =>
+            console.error(`agent: transcription stopped for ${participant.identity}`, error),
+          )
       },
     )
 
     await ctx.connect(undefined, AutoSubscribe.AUDIO_ONLY)
     await channelState.refresh(roomId)
+    const ticker = setInterval(refresh, CHANNEL_REFRESH_MS)
 
-    const detach = synthesizer.attach(roomId)
+    const detachSynthesizer = synthesizer.attach(roomId)
+    // The captions half of the pipeline: every segment the transcriber emits
+    // goes out on the reliable data channel as UTF-8 JSON, which is what the
+    // web client parses (spec module 06). No topic — the client validates the
+    // shape and ignores anything else, so a topic would buy nothing.
+    const encoder = new TextEncoder()
+    const detachCaptions = bus.subscribe(roomId, (segment) => {
+      void ctx.room.localParticipant
+        ?.publishData(encoder.encode(JSON.stringify(segment)), { reliable: true })
+        .catch((error) => console.error(`agent: caption broadcast failed in ${roomId}`, error))
+    })
+
     ctx.addShutdownCallback(async () => {
-      detach()
+      clearInterval(ticker)
+      detachCaptions()
+      detachSynthesizer()
       channelState.forget(roomId)
+      ingest.forget(roomId)
       await tracks.close()
     })
   },

@@ -2,8 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
-  # Local inference (turn detection models) is not used by the translation
-  # worker; its build downloads model binaries we never load.
+  # Its install script is `node -e ""` — a no-op that only suppresses pnpm's
+  # implicit node-gyp rebuild; the real binaries arrive as per-platform
+  # optionalDependencies. The translation worker loads none of them.
   '@livekit/local-inference': false
   esbuild: true
   lefthook: true
