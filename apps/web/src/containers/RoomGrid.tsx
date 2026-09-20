@@ -3,6 +3,7 @@ import { Track } from 'livekit-client'
 import { ParticipantTile } from '../components/ParticipantTile'
 import { ScreenShareTile } from '../components/ScreenShareTile'
 import { type GridEntry, orderTiles } from '../lib/grid'
+import { withoutAgents } from '../lib/participants'
 
 // One MediaStream per track. Rebuilding it each render hands <video> a new
 // object identity, so the ref callback reassigns srcObject on every tick.
@@ -18,7 +19,10 @@ function streamOf(track: MediaStreamTrack | undefined): MediaStream | undefined 
 }
 
 export function RoomGrid() {
-  const participants = useParticipants()
+  // Filtered once, at the source: the translation worker is a real LiveKit
+  // participant (it has to be, or nobody could subscribe to its tracks), and
+  // every tile, mute lookup and count below reads from this one list.
+  const participants = withoutAgents(useParticipants())
   const { localParticipant } = useLocalParticipant()
 
   const cameraTracks = useTracks([Track.Source.Camera], { onlySubscribed: true })

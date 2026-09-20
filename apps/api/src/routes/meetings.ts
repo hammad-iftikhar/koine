@@ -205,6 +205,10 @@ export async function meetingRoutes(app: FastifyInstance) {
       livekitUrl,
       identity: participantId,
       participantId,
+      // The stored row read back to the client: plan 06's web client picks
+      // its single translation channel from this, so it is a contract two
+      // apps depend on rather than an echo for convenience.
+      hearLang: parsed.data.hearLang,
       guestToken: userId
         ? null
         : signGuestToken({
