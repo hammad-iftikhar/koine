@@ -17,6 +17,7 @@ export {
 export {
   CreateMeetingBody,
   CreateMeetingResponse,
+  HearLang,
   JoinMeetingBody,
   JoinResponse,
   MeetingResponse,

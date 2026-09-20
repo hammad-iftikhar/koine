@@ -6,12 +6,14 @@ import { type Browser, expect, type Page, test } from '@playwright/test'
  * `GET /api/meetings/:code` is rate limited to 10 lookups per 60s per IP
  * (`LOOKUP_LIMIT` in `apps/api/src/routes/meetings.ts`), and every browser here
  * reaches the API as the same Docker gateway address, so the whole file shares
- * one bucket. One run spends 6 of the 10 — three tests, two browsers each, one
- * pre-join lookup apiece (measured: the bucket reads 6 after a run from a clean
- * window, 12 after two back-to-back). A second run inside the same window
- * therefore runs out partway, and the symptom looks nothing like a media bug:
- * pre-join renders "Couldn't load this meeting" and the test dies at its 30s
- * timeout waiting for the name field, with the call never starting.
+ * one bucket. One run spends 8 of the 10 — four tests, two browsers each, one
+ * pre-join lookup apiece (measured: the bucket reads 8 after a run from a clean
+ * window). A second run inside the same window therefore runs out partway, and
+ * the symptom looks nothing like a media bug: pre-join renders "Couldn't load
+ * this meeting" and the test dies at its 30s timeout waiting for the name
+ * field, with the call never starting. The file is now one two-browser test
+ * away from the bucket itself, not just a second run of it — the next test
+ * added here needs the wait bumped or a lookup trimmed, not just a note.
  *
  * That is the limiter working as plan 04 designed it, not flakiness. Do not
  * loosen it and do not add a retry here — just pause between runs. An earlier

@@ -1,10 +1,11 @@
-import { ChatMessageDTO, FLOOR, MessagesResponse } from '@koine/shared'
+import { type ChatMessageDTO, FLOOR, MessagesResponse } from '@koine/shared'
 import { useRoomContext } from '@livekit/components-react'
-import { RoomEvent } from 'livekit-client'
+import { type RemoteParticipant, RoomEvent } from 'livekit-client'
 import { AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChatPanel } from '../components/ChatPanel'
 import { apiFetch } from '../lib/api'
+import { decodeChatMessage } from '../lib/chat-messages'
 
 const CHAT_TOPIC = 'chat'
 
@@ -48,6 +49,7 @@ export function RoomChat({
   const room = useRoomContext()
   const [messages, setMessages] = useState<ChatMessageDTO[]>([])
   const [failedSend, setFailedSend] = useState<string | null>(null)
+  const [retrying, setRetrying] = useState(false)
 
   // Coalesces re-fetches triggered by `needsTranslation`: several messages
   // arriving in the same burst must produce at most one fetch in flight and
@@ -101,26 +103,32 @@ export function RoomChat({
 
   // Live delivery over the room connection. No second realtime system.
   useEffect(() => {
-    const onData = (payload: Uint8Array, _p: unknown, _k: unknown, topic?: string) => {
+    const onData = (
+      payload: Uint8Array,
+      participant?: RemoteParticipant,
+      _k?: unknown,
+      topic?: string,
+    ) => {
       if (topic !== CHAT_TOPIC) return
-      try {
-        const decoded: unknown = JSON.parse(new TextDecoder().decode(payload))
-        // Runtime-checked, not just cast: valid JSON that is not a
-        // well-shaped ChatMessageDTO (e.g. missing `translations`) must be
-        // dropped here, the same rigor `MessagesResponse.safeParse` already
-        // applies to the history path — an `as` cast would let it into
-        // state and crash the next render instead.
-        const parsed = ChatMessageDTO.safeParse(decoded)
-        if (!parsed.success) return
-        const incoming = parsed.data
-        setMessages((prev) => (prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]))
-        // A live message never carries a translation for us yet. Re-fetch
-        // history once it lands so it becomes translated instead of staying
-        // marked "Translation unavailable" forever.
-        if (needsTranslation(incoming, hearLang)) void refetchHistory()
-      } catch {
-        // Malformed JSON must not blank the panel.
-      }
+      // The whole accept/refuse decision, sender included, lives in
+      // `decodeChatMessage` — the same trust boundary `decodeCaption`
+      // enforces for captions: every joiner's token carries
+      // `canPublishData`, so a well-formed packet proves nothing about who
+      // sent it on its own.
+      const incoming = decodeChatMessage(payload, participant)
+      if (!incoming) return
+      // The payload's `author` is not trusted either: decodeChatMessage
+      // only proved the sender IS this participantId, not that the name
+      // they typed for themselves is real. Render the roster's name for
+      // them instead, the way LiveCaptions derives the speaker's name.
+      const author =
+        room.getParticipantByIdentity?.(incoming.participantId)?.name ?? incoming.author
+      const message = author === incoming.author ? incoming : { ...incoming, author }
+      setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]))
+      // A live message never carries a translation for us yet. Re-fetch
+      // history once it lands so it becomes translated instead of staying
+      // marked "Translation unavailable" forever.
+      if (needsTranslation(message, hearLang)) void refetchHistory()
     }
     room.on(RoomEvent.DataReceived, onData)
     return () => {
@@ -185,8 +193,17 @@ export function RoomChat({
           <span className="min-w-0 flex-1 truncate">Message not sent: "{failedSend}"</span>
           <button
             type="button"
-            onClick={() => void send(failedSend)}
-            className="shrink-0 rounded-full border border-[var(--edge)] px-2.5 py-1 text-[12px] font-medium text-blue transition-colors hover:bg-blue/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+            disabled={retrying}
+            onClick={() => {
+              // Without this guard a double-click posts the same text
+              // twice: `send` clears `failedSend` only after the request
+              // resolves, so a second click before that happens fires a
+              // second, identical POST.
+              if (retrying) return
+              setRetrying(true)
+              void send(failedSend).finally(() => setRetrying(false))
+            }}
+            className="shrink-0 rounded-full border border-[var(--edge)] px-2.5 py-1 text-[12px] font-medium text-blue transition-colors hover:bg-blue/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-60"
           >
             Retry
           </button>
