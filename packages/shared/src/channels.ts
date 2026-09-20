@@ -5,6 +5,16 @@ export type ChannelInput = { hearLang: string }
 export const MAX_CHANNELS_PER_ROOM = 6
 
 /**
+ * The name every synthesized channel's audio track carries: `tr:<lang>`.
+ *
+ * Both sides of the wire read it — the worker names its published tracks with
+ * it, the client tells a translated track from the floor with it — so it lives
+ * here rather than as a string literal in each package that would then be free
+ * to drift.
+ */
+export const TRANSLATION_PREFIX = 'tr:'
+
+/**
  * The set of languages needing a synthesized audio channel.
  *
  * One channel per language, never per listener — twenty-five people speaking

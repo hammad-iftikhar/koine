@@ -1,11 +1,14 @@
-import { FLOOR } from '@koine/shared'
+import { FLOOR, TRANSLATION_PREFIX } from '@koine/shared'
 import { type RemoteTrack, Track } from 'livekit-client'
 
 /**
  * The agent publishes one audio track per target language, named
  * `tr:<lang>` — see the worker's `tracks.ts`. Everything else is the floor.
+ *
+ * Re-exported rather than redeclared: the name is a wire contract with the
+ * worker, so both ends read the same constant out of `@koine/shared`.
  */
-export const TRANSLATION_PREFIX = 'tr:'
+export { TRANSLATION_PREFIX }
 
 /**
  * The one channel this listener is entitled to, or `null` for the floor —
