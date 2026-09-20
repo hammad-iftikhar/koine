@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deriveChannels } from '@/channels'
+import { deriveChannels } from '../src/channels'
 
 const p = (hearLang: string) => ({ hearLang })
 

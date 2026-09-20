@@ -43,9 +43,10 @@ apps/api/src/modules/<feature>/<feature>.{route,controller,repository}.ts
 apps/api/tests/modules/<feature>/<feature>.route.test.ts
 ```
 
-- **Imports.** `@/` is the package's own `src/`, `@tests/` its own `tests/`.
-  Anything leaving its directory uses the alias; same-directory imports stay
-  relative. See [decision 0001](docs/decisions/0001-path-alias-for-cross-directory-imports.md).
+- **Imports.** `apps/web` only: `@/` is its `src/`, `@tests/` its `tests/`, and
+  anything leaving its directory uses the alias. `apps/api`, `apps/agent` and
+  `packages/shared` use relative imports throughout. See
+  [decision 0017](docs/decisions/0017-path-alias-in-the-web-app-only.md).
 - **Tests.** One `tests/` folder per package, mirroring `src/`. Storybook
   stories stay beside their components. See [decision 0002](docs/decisions/0002-tests-in-a-per-package-tests-folder.md).
 - **API modules.** Routes register URLs, controllers hold the rules, repositories

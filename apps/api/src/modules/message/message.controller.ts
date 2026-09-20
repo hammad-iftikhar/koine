@@ -7,15 +7,15 @@ import {
   enforceRateLimit,
   LOOKUP_LIMIT,
   LOOKUP_WINDOW,
-} from '@/guards'
-import { findMeetingByCode } from '@/modules/meeting/meeting.repository'
+} from '../../guards'
+import { getTranslator } from '../../translate'
+import { findMeetingByCode } from '../meeting/meeting.repository'
 import {
   cacheTranslation,
   findParticipantById,
   insertMessage,
   listMessages,
-} from '@/modules/message/message.repository'
-import { getTranslator } from '@/translate'
+} from './message.repository'
 
 const MESSAGE_MEETING_NOT_FOUND = 'Meeting code not found.'
 

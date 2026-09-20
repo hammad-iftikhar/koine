@@ -1,6 +1,6 @@
 import type Redis from 'ioredis'
 import { expect, it, vi } from 'vitest'
-import { createSpendTracker } from '@/spend'
+import { createSpendTracker } from '../src/spend'
 
 // A stub, not a real Redis: incrby/expire are the only two calls this
 // module makes, so that's the whole surface to fake.

@@ -66,12 +66,12 @@ services:
       - ./apps/agent/src:/app/apps/agent/src
       - ./apps/web/src:/app/apps/web/src
       - ./packages/shared/src:/app/packages/shared/src
-      - ./tsconfig.base.json:/app/tsconfig.base.json:ro
-      - ./apps/api/tsconfig.json:/app/apps/api/tsconfig.json:ro
-      - ./apps/agent/tsconfig.json:/app/apps/agent/tsconfig.json:ro
-      - ./apps/web/tsconfig.json:/app/apps/web/tsconfig.json:ro
+      # web's `@/` alias is declared here, not under src, so mounted sources
+      # against the image's stale copy resolve nothing — and the error names
+      # neither file. It sits beside src rather than inside it, so the
+      # nested-mount problem above does not apply. Only web uses the alias;
+      # api and agent import relatively and need nothing outside src.
       - ./apps/web/vite.config.ts:/app/apps/web/vite.config.ts:ro
-      - ./packages/shared/tsconfig.json:/app/packages/shared/tsconfig.json:ro
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }

@@ -1,10 +1,10 @@
 import cors from '@fastify/cors'
 import Fastify, { type FastifyInstance } from 'fastify'
-import { healthRoutes } from '@/modules/health/health.route'
-import { meRoutes } from '@/modules/me/me.route'
-import { meetingRoutes } from '@/modules/meeting/meeting.route'
-import { messageRoutes } from '@/modules/message/message.route'
 import { auth as defaultAuth, toHeaders } from './auth'
+import { healthRoutes } from './modules/health/health.route'
+import { meRoutes } from './modules/me/me.route'
+import { meetingRoutes } from './modules/meeting/meeting.route'
+import { messageRoutes } from './modules/message/message.route'
 import { webOrigins } from './origins'
 
 /**

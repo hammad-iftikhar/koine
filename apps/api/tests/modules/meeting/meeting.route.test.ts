@@ -1,12 +1,12 @@
 import { formatMeetingCode } from '@koine/shared'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest'
-import { buildApp } from '@/app'
-import { db } from '@/db/client'
-import { meeting, participant, user } from '@/db/schema'
-import * as livekit from '@/livekit'
-import * as rateLimit from '@/rate-limit'
-import { redis } from '@/redis'
+import { buildApp } from '../../../src/app'
+import { db } from '../../../src/db/client'
+import { meeting, participant, user } from '../../../src/db/schema'
+import * as livekit from '../../../src/livekit'
+import * as rateLimit from '../../../src/rate-limit'
+import { redis } from '../../../src/redis'
 
 function claims(jwt: string): Record<string, unknown> {
   const payload = jwt.split('.')[1] as string

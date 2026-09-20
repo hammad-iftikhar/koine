@@ -5,7 +5,7 @@ import {
   joinMeeting,
   leaveMeeting,
   lookupMeeting,
-} from '@/modules/meeting/meeting.controller'
+} from './meeting.controller'
 
 export async function meetingRoutes(app: FastifyInstance) {
   app.post('/api/meetings', createMeeting)

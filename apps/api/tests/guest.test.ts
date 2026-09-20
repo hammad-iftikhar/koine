@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto'
 import { expect, it } from 'vitest'
-import { type GuestClaims, signGuestToken, verifyGuestToken } from '@/guest'
+import { type GuestClaims, signGuestToken, verifyGuestToken } from '../src/guest'
 
 // `satisfies`, not a bare literal: without it TypeScript widens 'es'/'en' to
 // string and every signGuestToken(claims) call fails to typecheck.

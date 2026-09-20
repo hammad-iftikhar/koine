@@ -1,7 +1,7 @@
-import { withTestDb } from '@tests/helpers/db'
 import { afterAll, beforeAll, expect, it } from 'vitest'
-import { buildApp } from '@/app'
-import { createAuth } from '@/auth'
+import { buildApp } from '../src/app'
+import { createAuth } from '../src/auth'
+import { withTestDb } from './helpers/db'
 
 // Its own file on purpose: Better Auth's default rate-limit storage is an
 // in-memory map, and vitest gives each test file its own process, so these

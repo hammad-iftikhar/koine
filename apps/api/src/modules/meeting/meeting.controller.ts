@@ -13,9 +13,9 @@ import {
   enforceRateLimit,
   LOOKUP_LIMIT,
   LOOKUP_WINDOW,
-} from '@/guards'
-import { signGuestToken } from '@/guest'
-import { mintAccessToken } from '@/livekit'
+} from '../../guards'
+import { signGuestToken } from '../../guest'
+import { mintAccessToken } from '../../livekit'
 import {
   findActiveParticipants,
   findMeetingByCode,
@@ -24,7 +24,7 @@ import {
   markMeetingEnded,
   markMeetingStarted,
   markParticipantLeft,
-} from '@/modules/meeting/meeting.repository'
+} from './meeting.repository'
 
 export const MEETING_NOT_FOUND =
   'Meeting code not found — check the code or ask the host for the link.'

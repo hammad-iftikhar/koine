@@ -45,7 +45,7 @@ person actually reads at 3am — and the record here is the longer form.
 
 | # | Decision | Status |
 |---|---|---|
-| [0001](0001-path-alias-for-cross-directory-imports.md) | `@/` for cross-directory imports | Accepted |
+| [0001](0001-path-alias-for-cross-directory-imports.md) | `@/` for cross-directory imports | Superseded by [0017](0017-path-alias-in-the-web-app-only.md) |
 | [0002](0002-tests-in-a-per-package-tests-folder.md) | Tests in a per-package `tests/` folder | Accepted |
 | [0003](0003-route-controller-repository-modules.md) | Route / controller / repository modules in the API | Accepted |
 | [0004](0004-decisions-recorded-in-docs-decisions.md) | Decisions recorded in `docs/decisions` | Accepted |
@@ -61,3 +61,4 @@ person actually reads at 3am — and the record here is the longer form.
 | [0014](0014-tts-returns-raw-pcm.md) | TTS returns raw PCM, not mp3 | Accepted |
 | [0015](0015-agent-bus-is-in-process.md) | The agent's caption bus is in-process, a Map of Sets | Accepted |
 | [0016](0016-dev-image-base-is-debian-not-alpine.md) | The dev image is Debian-based, not Alpine | Accepted |
+| [0017](0017-path-alias-in-the-web-app-only.md) | `@/` in the web app only | Accepted |

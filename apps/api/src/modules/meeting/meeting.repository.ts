@@ -1,6 +1,6 @@
 import { and, eq, isNull } from 'drizzle-orm'
-import { db } from '@/db/client'
-import { meeting, participant } from '@/db/schema'
+import { db } from '../../db/client'
+import { meeting, participant } from '../../db/schema'
 
 export type MeetingRow = typeof meeting.$inferSelect
 

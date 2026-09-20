@@ -1,6 +1,6 @@
 import type { MeResponse } from '@koine/shared'
 import type { FastifyRequest } from 'fastify'
-import { getSession } from '@/auth'
+import { getSession } from '../../auth'
 
 export async function getMe(request: FastifyRequest): Promise<MeResponse> {
   const result = await getSession(request)

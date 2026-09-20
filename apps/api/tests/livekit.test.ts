@@ -1,5 +1,5 @@
 import { beforeAll, expect, it } from 'vitest'
-import { mintAccessToken } from '@/livekit'
+import { mintAccessToken } from '../src/livekit'
 
 function claims(jwt: string): Record<string, unknown> {
   const payload = jwt.split('.')[1] as string

@@ -1,7 +1,7 @@
 import Redis from 'ioredis'
 import { afterAll, expect, it } from 'vitest'
-import { consume } from '@/rate-limit'
-import { redis } from '@/redis'
+import { consume } from '../src/rate-limit'
+import { redis } from '../src/redis'
 
 const key = () => `test:${Math.random().toString(36).slice(2)}`
 

@@ -1,7 +1,7 @@
 import type { CaptionSegment } from '@koine/shared'
 import { expect, it, vi } from 'vitest'
-import { createBus } from '@/bus'
-import { createTranscriber } from '@/transcriber'
+import { createBus } from '../src/bus'
+import { createTranscriber } from '../src/transcriber'
 
 function stubClient(over: Partial<Record<string, unknown>> = {}) {
   return {

@@ -1,7 +1,7 @@
 import { initializeLogger } from '@livekit/agents'
 import type { AudioFrame } from '@livekit/rtc-node'
 import { expect, it, vi } from 'vitest'
-import { type Channel, channelFrom, createTrackPublisher, TTS_SAMPLE_RATE } from '@/tracks'
+import { type Channel, channelFrom, createTrackPublisher, TTS_SAMPLE_RATE } from '../src/tracks'
 
 // `AudioByteStream` reaches for the framework logger the moment it is
 // constructed, and in the worker it is `cli.runApp` that puts one there.

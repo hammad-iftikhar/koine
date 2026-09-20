@@ -1,6 +1,6 @@
 import { asc, eq, sql } from 'drizzle-orm'
-import { db } from '@/db/client'
-import { message, participant } from '@/db/schema'
+import { db } from '../../db/client'
+import { message, participant } from '../../db/schema'
 
 export function findParticipantById(participantId: string) {
   return db.query.participant.findFirst({ where: eq(participant.id, participantId) })

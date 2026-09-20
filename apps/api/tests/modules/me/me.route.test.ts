@@ -1,6 +1,6 @@
 import { MeResponse } from '@koine/shared'
 import { afterAll, beforeAll, expect, it } from 'vitest'
-import { buildApp } from '@/app'
+import { buildApp } from '../../../src/app'
 
 let app: Awaited<ReturnType<typeof buildApp>>
 

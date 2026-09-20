@@ -1,6 +1,6 @@
 # 0001. Use `@/` for cross-directory imports
 
-**Status:** Accepted
+**Status:** Superseded by [0017](0017-path-alias-in-the-web-app-only.md)
 **Decided:** 2026-09-20 · **Recorded:** 2026-09-20
 **Lives in:** each package's `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`
 

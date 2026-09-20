@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { webOrigins } from '@/origins'
+import { webOrigins } from '../src/origins'
 
 it('parses a comma-separated list and trims whitespace', () => {
   expect(webOrigins(' http://localhost:5173 , http://localhost:4173 ')).toEqual([

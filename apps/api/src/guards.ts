@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
-import { getSession } from '@/auth'
-import { consume } from '@/rate-limit'
+import { getSession } from './auth'
+import { consume } from './rate-limit'
 
 // Lookup is unauthenticated code-guessing surface, so it stays tight — the
 // spec's test list names the eleventh lookup from one IP specifically.

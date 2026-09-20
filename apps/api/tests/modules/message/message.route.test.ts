@@ -2,11 +2,11 @@ import { randomInt } from 'node:crypto'
 import { FLOOR } from '@koine/shared'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest'
-import { buildApp } from '@/app'
-import { db } from '@/db/client'
-import { message, user } from '@/db/schema'
-import { cacheTranslation } from '@/modules/message/message.repository'
-import { setTranslator } from '@/translate'
+import { buildApp } from '../../../src/app'
+import { db } from '../../../src/db/client'
+import { message, user } from '../../../src/db/schema'
+import { cacheTranslation } from '../../../src/modules/message/message.repository'
+import { setTranslator } from '../../../src/translate'
 
 let app: Awaited<ReturnType<typeof buildApp>>
 const defaultTranslateImpl = async (_text: string, _from: string, to: string[]) =>

@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest'
-import { createIngest } from '@/ingest'
-import type { FullRoster } from '@/room'
+import { createIngest } from '../src/ingest'
+import type { FullRoster } from '../src/room'
 
 const ROSTER: FullRoster = {
   floorLang: 'es',
