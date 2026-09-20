@@ -17,7 +17,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    # No persistence in dev: Redis holds counters and coordination, never truth.
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     ports: ["6379:6379"]
     healthcheck:
@@ -27,13 +26,6 @@ services:
       retries: 10
 
   livekit:
-    # Must speak the signalling protocol livekit-client publishes with. v1.8
-    # (protocol 16) does not: livekit-client 2.22 negotiates as protocol 17 and
-    # its publisher renegotiation never completes against v1.8, so the first
-    # publish only lands after the client's 15s negotiation timeout forces a
-    # full reconnect. Mute, screen share and anything else that renegotiates
-    # inherit that 15s delay. Keep this at or above the server version the
-    # installed livekit-client targets.
     image: livekit/livekit-server:v1.9
     command: ["--config", "/etc/livekit.yaml"]
     volumes: ["./docker/livekit.dev.yaml:/etc/livekit.yaml:ro"]
@@ -49,56 +41,37 @@ services:
       timeout: 3s
       retries: 10
 
-  # --config.verify-deps-before-run=false: node_modules is baked into the image
-  # and only sources are mounted, so pnpm's pre-run dependency check has nothing
-  # to usefully compare against. Left on, it reinstalls on every start against a
-  # store it re-derives from the mount, and fails.
   api:
     profiles: ["apps"]
     build: { context: ., dockerfile: docker/Dockerfile.dev }
     command: ["pnpm", "--config.verify-deps-before-run=false", "--filter", "@koine/api", "dev"]
     environment:
-      # Compose is the dev and e2e stack; this turns on the x-test-user seam
-      # that the e2e specs authenticate through (see currentUserId in
-      # apps/api/src/modules/meeting/meeting.controller.ts). Production deployment is module
-      # 08's problem.
       NODE_ENV: test
       DATABASE_URL: postgres://koine:koine@postgres:5432/koine
       REDIS_URL: redis://redis:6379
       LIVEKIT_URL: ws://livekit:7880
-      # The browser-reachable LiveKit URL, returned to clients in the join
-      # response. Distinct from LIVEKIT_URL above, which the API uses to
-      # reach LiveKit over the compose network.
       LIVEKIT_PUBLIC_URL: ${LIVEKIT_PUBLIC_URL:-ws://localhost:7880}
       LIVEKIT_API_KEY: devkey
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-      # The API's own public URL. Better Auth builds the Google redirect_uri
-      # from it (<base>/api/auth/callback/google); left unset it guesses from
-      # the incoming request and warns on every boot.
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
       GUEST_TOKEN_SECRET: ${GUEST_TOKEN_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:5173,http://localhost:4173}
-    # Loopback only, deliberately. NODE_ENV: test above opens the x-test-user
-    # header seam, which accepts any user id without authenticating — published
-    # on 0.0.0.0 that is an auth bypass reachable by anyone on the same network
-    # while the dev stack is up. Everything that talks to this API does so from
-    # the host as localhost:3000 (VITE_API_URL, BETTER_AUTH_URL, the e2e specs).
     ports: ["127.0.0.1:3000:3000"]
-    # Sources only. node_modules is image content and nothing is mounted over
-    # a path inside another mount: Docker Desktop tears a volume mounted inside
-    # a bind mount back down about a second after the container starts, after
-    # which the host's macOS node_modules shows through the bind and the
-    # container runs darwin-arm64 binaries. Dependency, config and manifest
-    # changes therefore need `docker compose --profile apps up --build`.
     volumes: &src
       - ./apps/api/src:/app/apps/api/src
       - ./apps/agent/src:/app/apps/agent/src
       - ./apps/web/src:/app/apps/web/src
       - ./packages/shared/src:/app/packages/shared/src
+      - ./tsconfig.base.json:/app/tsconfig.base.json:ro
+      - ./apps/api/tsconfig.json:/app/apps/api/tsconfig.json:ro
+      - ./apps/agent/tsconfig.json:/app/apps/agent/tsconfig.json:ro
+      - ./apps/web/tsconfig.json:/app/apps/web/tsconfig.json:ro
+      - ./apps/web/vite.config.ts:/app/apps/web/vite.config.ts:ro
+      - ./packages/shared/tsconfig.json:/app/packages/shared/tsconfig.json:ro
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -127,7 +100,6 @@ services:
     command: ["pnpm", "--config.verify-deps-before-run=false", "--filter", "@koine/web", "dev", "--host", "0.0.0.0"]
     environment:
       VITE_API_URL: http://localhost:3000
-      # The browser reaches LiveKit from the host, not the compose network.
       VITE_LIVEKIT_URL: ws://localhost:7880
     ports: ["5173:5173"]
     volumes: *src

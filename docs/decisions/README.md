@@ -60,3 +60,4 @@ person actually reads at 3am — and the record here is the longer form.
 | [0013](0013-chat-translation-is-lazy-and-cached.md) | Chat translation is lazy, per-reader and cached on the row | Accepted |
 | [0014](0014-tts-returns-raw-pcm.md) | TTS returns raw PCM, not mp3 | Accepted |
 | [0015](0015-agent-bus-is-in-process.md) | The agent's caption bus is in-process, a Map of Sets | Accepted |
+| [0016](0016-dev-image-base-is-debian-not-alpine.md) | The dev image is Debian-based, not Alpine | Accepted |
