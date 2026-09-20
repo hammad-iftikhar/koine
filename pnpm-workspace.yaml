@@ -2,5 +2,8 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  # Local inference (turn detection models) is not used by the translation
+  # worker; its build downloads model binaries we never load.
+  '@livekit/local-inference': false
   esbuild: true
   lefthook: true

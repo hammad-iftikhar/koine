@@ -1,11 +1,56 @@
 /**
- * Translation agent worker.
+ * Translation agent worker — the composition root.
  *
  * Two roles separated by a CaptionSegment message: the transcriber emits, the
  * synthesizer consumes. Both run in this one process in v1 — see spec module 06,
  * "Two roles, one process".
+ *
+ * Nothing here decides anything. The channel set comes from `room.ts`, the
+ * framing from `audio.ts`, the pipeline from `transcriber.ts` and
+ * `synthesizer.ts`, and each of those is tested where it lives. This file only
+ * says which of them talks to which, and hands the result to LiveKit Agents.
  */
-const required = ['DATABASE_URL', 'REDIS_URL', 'LIVEKIT_URL'] as const
+import { fileURLToPath } from 'node:url'
+import {
+  AutoSubscribe,
+  cli,
+  defineAgent,
+  type JobContext,
+  ServerOptions,
+  WorkerPermissions,
+} from '@livekit/agents'
+import {
+  type AudioFrame,
+  AudioStream,
+  type RemoteParticipant,
+  type RemoteTrack,
+  type RemoteTrackPublication,
+  RoomEvent,
+  TrackSource,
+} from '@livekit/rtc-node'
+import Redis from 'ioredis'
+import postgres from 'postgres'
+import { createUtteranceBuffer } from './audio'
+import { createBus } from './bus'
+import { createOpenAIClient } from './openai'
+import { createChannelState, createRosterLoader, speakerLang } from './room'
+import { createSpendTracker } from './spend'
+import { createSynthesizer } from './synthesizer'
+import { createTranslationTracks } from './tracks'
+import { createTranscriber } from './transcriber'
+
+// LIVEKIT_API_KEY and LIVEKIT_API_SECRET are what the framework registers the
+// worker with and what it mints each job's token from; OPENAI_API_KEY is what
+// the pipeline runs on. Missing any of them is a startup failure, not a
+// degradation: without them the worker would join rooms and do nothing.
+const required = [
+  'DATABASE_URL',
+  'REDIS_URL',
+  'LIVEKIT_URL',
+  'LIVEKIT_API_KEY',
+  'LIVEKIT_API_SECRET',
+  'OPENAI_API_KEY',
+] as const
 
 const missing = required.filter((key) => !process.env[key])
 if (missing.length > 0) {
@@ -13,4 +58,100 @@ if (missing.length > 0) {
   process.exit(1)
 }
 
-console.log('agent: started, awaiting room dispatch')
+/** What microphone audio is decoded to before it is uploaded for transcription. */
+const INGEST_SAMPLE_RATE = 16_000
+const INGEST_WINDOW_MS = 4_000
+
+const client = createOpenAIClient()
+const bus = createBus()
+const sql = postgres(process.env.DATABASE_URL as string, { max: 4 })
+const redis = new Redis(process.env.REDIS_URL as string, { maxRetriesPerRequest: 2 })
+const spend = createSpendTracker(redis)
+const loadRoster = createRosterLoader(sql)
+const channelState = createChannelState({ load: loadRoster })
+
+export default defineAgent({
+  entry: async (ctx: JobContext) => {
+    // The room name is the meeting's id (plan 04 R22), so it is also the key
+    // every module below is scoped by.
+    const dispatched = ctx.job.room?.name
+    if (!dispatched) throw new Error('agent: dispatched a job with no room name')
+    const roomId: string = dispatched
+
+    const transcriber = createTranscriber({
+      client,
+      bus,
+      channels: () => channelState.channels(roomId),
+    })
+    const tracks = createTranslationTracks(ctx.room)
+    const synthesizer = createSynthesizer({
+      client,
+      bus,
+      spend,
+      publishAudio: (audio, lang) => tracks.publish(audio, lang),
+    })
+
+    async function transcribe(participant: RemoteParticipant, track: RemoteTrack) {
+      // Per track, because the roster is where a speaker's language lives and
+      // a participant can join after the last refresh.
+      const sourceLang = speakerLang(await loadRoster(roomId), participant.identity)
+      const utterances = createUtteranceBuffer({
+        sampleRate: INGEST_SAMPLE_RATE,
+        windowMs: INGEST_WINDOW_MS,
+        onUtterance: (wav) =>
+          void transcriber.onAudio(roomId, participant.identity, wav, sourceLang),
+      })
+
+      // Cast because this package compiles with the DOM lib, whose
+      // ReadableStream is not typed as async iterable; Node's is, at runtime.
+      const frames = new AudioStream(track, {
+        sampleRate: INGEST_SAMPLE_RATE,
+        numChannels: 1,
+      }) as unknown as AsyncIterable<AudioFrame>
+      for await (const frame of frames) utterances.push(frame)
+      utterances.flush()
+    }
+
+    // Listeners before connecting: a participant who joins in the gap would
+    // otherwise never reach the channel set.
+    const refresh = () => void channelState.refresh(roomId)
+    ctx.room.on(RoomEvent.ParticipantConnected, refresh)
+    ctx.room.on(RoomEvent.ParticipantDisconnected, refresh)
+    ctx.room.on(
+      RoomEvent.TrackSubscribed,
+      (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
+        if (publication.source !== TrackSource.SOURCE_MICROPHONE) return
+        // Translation is an enhancement layer: a failure here is logged and the
+        // call carries on untranslated.
+        transcribe(participant, track).catch((error) =>
+          console.error(`agent: transcription stopped for ${participant.identity}`, error),
+        )
+      },
+    )
+
+    await ctx.connect(undefined, AutoSubscribe.AUDIO_ONLY)
+    await channelState.refresh(roomId)
+
+    const detach = synthesizer.attach(roomId)
+    ctx.addShutdownCallback(async () => {
+      detach()
+      channelState.forget(roomId)
+      await tracks.close()
+    })
+  },
+})
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  cli.runApp(
+    new ServerOptions({
+      agent: fileURLToPath(import.meta.url),
+      // Not hidden, deliberately, and this is the one place the plan could not
+      // be followed: LiveKit's own guidance on this option is that "when
+      // hidden, it will also not be able to publish tracks to the room as it
+      // won't be visible" (docs.livekit.io/agents/server/options). A worker
+      // nobody can subscribe to publishes tr:<lang> into the void, so the
+      // worker joins visible and the client hides it from the roster instead.
+      permissions: new WorkerPermissions(true, true, true, false, [], false),
+    }),
+  )
+}

@@ -4,13 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx watch src/main.ts dev",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@koine/shared": "workspace:*",
+    "@livekit/agents": "^1.9.0",
+    "@livekit/rtc-node": "^0.13.35",
     "ioredis": "^6.0.0",
-    "openai": "^7.19.0"
+    "openai": "^7.19.0",
+    "postgres": "^3.4.9"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
