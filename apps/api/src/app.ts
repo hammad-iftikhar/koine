@@ -5,6 +5,7 @@ import { webOrigins } from './origins'
 import { healthRoutes } from './routes/health'
 import { meRoutes } from './routes/me'
 import { meetingRoutes } from './routes/meetings'
+import { messageRoutes } from './routes/messages'
 
 /**
  * Builds the app without listening, so tests can use app.inject().
@@ -66,5 +67,6 @@ export async function buildApp(
   await app.register(healthRoutes)
   await app.register(meRoutes)
   await app.register(meetingRoutes)
+  await app.register(messageRoutes)
   return app
 }

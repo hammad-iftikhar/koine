@@ -16,15 +16,15 @@ import { consume } from '../rate-limit'
 
 // Lookup is unauthenticated code-guessing surface, so it stays tight — the
 // spec's test list names the eleventh lookup from one IP specifically.
-const LOOKUP_LIMIT = 10
-const LOOKUP_WINDOW = 60
+export const LOOKUP_LIMIT = 10
+export const LOOKUP_WINDOW = 60
 
 // Join and end share a separate, larger bucket: a shared office NAT can put
 // a dozen legitimate colleagues behind one IP, and the tenth-plus person
 // joining or ending their own meeting is not the code-guessing attack this
 // defends against.
-const ACTION_LIMIT = 30
-const ACTION_WINDOW = 60
+export const ACTION_LIMIT = 30
+export const ACTION_WINDOW = 60
 
 const MEETING_NOT_FOUND = 'Meeting code not found — check the code or ask the host for the link.'
 
@@ -58,7 +58,9 @@ async function currentUserId(request: FastifyRequest): Promise<string | null> {
  * Same code-guessing defence on every route that takes a meeting code from
  * an unauthenticated caller: lookup, join and end all leak whether a code
  * exists (join by inserting, end by 404-vs-403), so all three are throttled
- * per IP, each in its own bucket.
+ * per IP, each in its own bucket. The messages routes in `./messages.ts` take
+ * a meeting code the same way and reuse this same helper and constants, one
+ * more bucket apiece.
  *
  * R24: the limiter fails OPEN. The meeting code is the primary defence here
  * and is entropy nobody can guess in ten years; the limiter is a secondary
@@ -66,7 +68,7 @@ async function currentUserId(request: FastifyRequest): Promise<string | null> {
  * a failure from `consume` is logged and the request is let through rather
  * than turning an infrastructure fault into a 500 for every meeting route.
  */
-async function enforceRateLimit(
+export async function enforceRateLimit(
   request: FastifyRequest,
   reply: FastifyReply,
   bucket: string,

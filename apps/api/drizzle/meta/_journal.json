@@ -22,6 +22,13 @@
       "when": 1789835773720,
       "tag": "0002_dashing_red_skull",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789894618414,
+      "tag": "0003_wet_mongoose",
+      "breakpoints": true
     }
   ]
 }

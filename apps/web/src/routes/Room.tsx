@@ -6,6 +6,7 @@ import { type PanelName, PanelToggles } from '../components/PanelToggles'
 import { ConnectionBanner } from '../containers/ConnectionBanner'
 import { LiveCaptions } from '../containers/LiveCaptions'
 import { LocalControls } from '../containers/LocalControls'
+import { RoomChat } from '../containers/RoomChat'
 import { RoomConnection } from '../containers/RoomConnection'
 import { RoomGrid } from '../containers/RoomGrid'
 import { TranslationAudio } from '../containers/TranslationAudio'
@@ -41,16 +42,28 @@ export function Room() {
 
   // From the server's copy of the row, not from local state: it is what the
   // join actually recorded, and it is the same value after a refresh.
-  const { hearLang } = parsed.data
+  const { hearLang, participantId } = parsed.data
 
   return (
     <RoomConnection credentials={parsed.data} micOn={micOn} cameraOn={cameraOn}>
       <TranslationAudio hearLang={hearLang} />
       <div className="grid h-dvh grid-rows-[1fr_auto] bg-ink">
-        <div className="relative min-h-0 p-3">
-          <ConnectionBanner />
-          <RoomGrid />
-          <LiveCaptions hearLang={hearLang} enabled={captions} />
+        <div className="flex min-h-0 gap-3 p-3">
+          <div className="relative min-h-0 min-w-0 flex-1">
+            <ConnectionBanner />
+            <RoomGrid />
+            <LiveCaptions hearLang={hearLang} enabled={captions} />
+          </div>
+          {panel === 'chat' && (
+            <div className="w-[340px] shrink-0">
+              <RoomChat
+                code={code}
+                participantId={participantId}
+                hearLang={hearLang}
+                onClose={() => setPanel(null)}
+              />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 items-center gap-3 px-4 pb-4 pt-2.5 md:grid-cols-[1fr_auto_1fr]">
