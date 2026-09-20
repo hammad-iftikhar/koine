@@ -1,4 +1,4 @@
-import { type ChatMessageDTO, FLOOR, MessagesResponse } from '@koine/shared'
+import { ChatMessageDTO, FLOOR, MessagesResponse } from '@koine/shared'
 import { useRoomContext } from '@livekit/components-react'
 import { RoomEvent } from 'livekit-client'
 import { AlertTriangle } from 'lucide-react'
@@ -23,6 +23,15 @@ function historyPath(code: string, hearLang: string) {
 // listening language against it.
 function needsTranslation(message: ChatMessageDTO, hearLang: string) {
   return hearLang !== FLOOR && message.lang !== hearLang && !message.translations[hearLang]
+}
+
+// Merge by id rather than replace: the data channel is lower-latency than
+// any history GET, so a message that already arrived live (or one the user
+// just sent) must not be wiped out by a snapshot taken before it existed.
+function mergeMessagesById(prev: ChatMessageDTO[], incoming: ChatMessageDTO[]): ChatMessageDTO[] {
+  const byId = new Map(prev.map((m) => [m.id, m]))
+  for (const m of incoming) byId.set(m.id, m)
+  return [...byId.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 }
 
 export function RoomChat({
@@ -56,13 +65,7 @@ export function RoomChat({
       const raw = await apiFetch(historyPath(code, hearLang))
       const parsed = MessagesResponse.safeParse(raw)
       if (parsed.success) {
-        // Merge by id rather than replace: a message that arrived live but
-        // has not made it into a snapshot yet must not be dropped.
-        setMessages((prev) => {
-          const byId = new Map(prev.map((m) => [m.id, m]))
-          for (const m of parsed.data.messages) byId.set(m.id, m)
-          return [...byId.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-        })
+        setMessages((prev) => mergeMessagesById(prev, parsed.data.messages))
       }
     } catch {
       // Best effort — the live copy (translated or not) stays on screen.
@@ -76,12 +79,17 @@ export function RoomChat({
   }, [code, hearLang])
 
   // History first: a late joiner must see what was said before they arrived.
+  // Merged by id, not replaced: the data channel is lower-latency than this
+  // GET, so a message that arrives (or one the user sends) before it
+  // resolves must survive the snapshot landing after it.
   useEffect(() => {
     let active = true
     apiFetch(historyPath(code, hearLang))
       .then((raw) => {
         const parsed = MessagesResponse.safeParse(raw)
-        if (active && parsed.success) setMessages(parsed.data.messages)
+        if (active && parsed.success) {
+          setMessages((prev) => mergeMessagesById(prev, parsed.data.messages))
+        }
       })
       .catch(() => {
         // History unavailable is not fatal — live messages still arrive.
@@ -96,14 +104,22 @@ export function RoomChat({
     const onData = (payload: Uint8Array, _p: unknown, _k: unknown, topic?: string) => {
       if (topic !== CHAT_TOPIC) return
       try {
-        const incoming = JSON.parse(new TextDecoder().decode(payload)) as ChatMessageDTO
+        const decoded: unknown = JSON.parse(new TextDecoder().decode(payload))
+        // Runtime-checked, not just cast: valid JSON that is not a
+        // well-shaped ChatMessageDTO (e.g. missing `translations`) must be
+        // dropped here, the same rigor `MessagesResponse.safeParse` already
+        // applies to the history path — an `as` cast would let it into
+        // state and crash the next render instead.
+        const parsed = ChatMessageDTO.safeParse(decoded)
+        if (!parsed.success) return
+        const incoming = parsed.data
         setMessages((prev) => (prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]))
         // A live message never carries a translation for us yet. Re-fetch
         // history once it lands so it becomes translated instead of staying
         // marked "Translation unavailable" forever.
         if (needsTranslation(incoming, hearLang)) void refetchHistory()
       } catch {
-        // A malformed packet must not blank the panel.
+        // Malformed JSON must not blank the panel.
       }
     }
     room.on(RoomEvent.DataReceived, onData)

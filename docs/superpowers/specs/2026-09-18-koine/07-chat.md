@@ -65,6 +65,27 @@ history on open.
 - Store fails → the message was still delivered live; surface a retry rather than
   silently losing it
 
+### Open item — a store failure is not just "surface a retry", it blocks delivery too
+
+This promises that a failed store still leaves the message delivered live, with
+only the store side needing a retry. The implementation does not do that: `send()`
+in `RoomChat` awaits the `POST` and only publishes to the data channel once it
+resolves, so a store failure means nothing goes out over the room connection
+either. Nobody else in the call sees the message until the sender retries and the
+store succeeds.
+
+Publishing before the store confirms would need a client-generated message id and
+the sender's `lang` (`participant.speak_lang`) to build a valid `ChatMessageDTO`
+ahead of the server's response. The client has neither: `JoinResponse` carries
+`identity`, `participantId` and `hearLang`, not `speakLang`, and there is no
+server-accepted client-supplied id for a message. Fixing this means changing the
+join response and the message-creation contract — another plan's work, not a
+patch to `RoomChat`.
+
+Until then, what a sender gets on a store failure is the retry notice `RoomChat`
+built: the typed text is kept and re-sendable, but it is not "still delivered
+live" — it is not delivered at all until the retry succeeds.
+
 ## Tests
 
 - A message sent by A appears for B — covered in the two-browser Playwright spec
