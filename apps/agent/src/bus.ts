@@ -35,7 +35,7 @@ export function createBus() {
 
       return () => {
         set.delete(handler)
-        if (set.size === 0) rooms.delete(roomId)
+        if (rooms.get(roomId) === set && set.size === 0) rooms.delete(roomId)
       }
     },
   }
