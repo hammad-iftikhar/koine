@@ -10,11 +10,13 @@ export function createSynthesizer(deps: {
   publishAudio: (audio: Buffer, lang: string, roomId: string) => Promise<void>
   spend: { consume(roomId: string, units: number): Promise<boolean> }
   /**
-   * Ends every `tr:` track in the room, once, when the ceiling trips.
+   * Unpublishes every `tr:` track in the room, once, when the ceiling trips.
    *
-   * Without it the tracks stay published and silent, and no LiveKit event
-   * fires for a track that merely stops carrying audio — so the client keeps
-   * the floor ducked under a channel that will never speak again.
+   * It has to be an unpublish. No LiveKit event fires for a track that merely
+   * stops carrying audio, and releasing the audio source alone leaves the
+   * publication in place — so the client would keep the floor ducked under a
+   * channel that will never speak again. `tracks.ts` takes the publication
+   * down, which is what raises `TrackUnpublished` on every subscriber.
    */
   endChannels?: (roomId: string) => Promise<void>
 }) {
@@ -55,9 +57,10 @@ export function createSynthesizer(deps: {
         }
         if (!within) {
           // Captions keep flowing; only the voice stops. The room is told by
-          // the client, which sees the tr: tracks end — so they have to
-          // actually end, here, or the listener sits at a ducked floor volume
-          // under a channel that has gone quiet for good.
+          // the client, which sees the tr: tracks disappear from the roster —
+          // so they have to actually be unpublished, here, or the listener
+          // sits at a ducked floor volume under a channel that has gone quiet
+          // for good.
           console.warn(`synthesizer: spend ceiling reached in ${roomId}, captions only`)
           if (!channelsEnded) {
             channelsEnded = true
