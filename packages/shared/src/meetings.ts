@@ -28,6 +28,14 @@ export const JoinResponse = z.object({
   identity: z.string(),
   participantId: z.string(),
   guestToken: z.string().nullable(),
+  /**
+   * Read back out of the row the join just wrote, not taken from the
+   * client's own state: the row is authoritative and survives a refresh,
+   * and a second stored key would be more state carrying less truth. It is
+   * what the client subscribes its one `tr:<lang>` channel by, and it is
+   * the same row the agent builds the channel set from.
+   */
+  hearLang: z.string(),
 })
 
 export const CreateMeetingResponse = z.object({

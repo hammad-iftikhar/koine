@@ -186,15 +186,26 @@ export async function meetingRoutes(app: FastifyInstance) {
     })
     const livekitUrl = livekitPublicUrl()
 
-    await db.insert(participant).values({
-      id: participantId,
-      meetingId: found.id,
-      userId,
-      displayName: parsed.data.displayName,
-      speakLang: parsed.data.speakLang,
-      hearLang: parsed.data.hearLang,
-      role: userId === found.hostUserId ? 'host' : 'guest',
-    })
+    // `returning` rather than echoing the request body: the client picks its
+    // `tr:<hearLang>` track name from this response while the agent derives
+    // the channel set from this very row (its roster loader selects
+    // `p.hear_lang`). Read back, the two cannot drift — if a normalisation
+    // ever lands on the write path, the client follows it instead of
+    // subscribing to a channel that does not exist and hearing silence with
+    // no error anywhere.
+    const [inserted] = await db
+      .insert(participant)
+      .values({
+        id: participantId,
+        meetingId: found.id,
+        userId,
+        displayName: parsed.data.displayName,
+        speakLang: parsed.data.speakLang,
+        hearLang: parsed.data.hearLang,
+        role: userId === found.hostUserId ? 'host' : 'guest',
+      })
+      .returning({ hearLang: participant.hearLang })
+    if (!inserted) throw new Error('join: participant insert returned no row')
 
     if (!found.startedAt) {
       await db.update(meeting).set({ startedAt: new Date() }).where(eq(meeting.id, found.id))
@@ -205,6 +216,10 @@ export async function meetingRoutes(app: FastifyInstance) {
       livekitUrl,
       identity: participantId,
       participantId,
+      // The stored row, read back. Plan 06's web client picks its single
+      // translation channel from this, so it is a contract two apps depend
+      // on rather than an echo for convenience.
+      hearLang: inserted.hearLang,
       guestToken: userId
         ? null
         : signGuestToken({

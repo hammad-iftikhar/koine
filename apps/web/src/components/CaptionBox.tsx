@@ -1,6 +1,20 @@
 import { Globe } from 'lucide-react'
 import { cn } from '../lib/cn'
 
+/**
+ * Where the caption box sits on the stage.
+ *
+ * Exported so `LiveCaptions` and the story that measures it cannot drift
+ * apart, because the width only works if the dock cooperates. `CaptionBox` is
+ * `w-[min(640px,92%)]`, and a percentage resolves against the containing
+ * block the dock leaves it: an absolutely positioned box with neither a width
+ * nor a `right` is shrink-to-fit, and centring it with `left-1/2` gives it
+ * half the stage to be 92% of — so it can never reach 640px and a long
+ * caption wraps into a narrow column. Spanning the stage and centring with
+ * flex gives the box the full width to resolve against.
+ */
+export const CAPTION_DOCK = 'absolute inset-x-0 bottom-3.5 flex justify-center'
+
 export type CaptionBoxProps = {
   speaker: string
   original: string

@@ -112,6 +112,10 @@ it('mints a token and records the languages on join', async () => {
   expect(res.statusCode).toBe(200)
   const body = res.json()
   expect(body.livekitToken).toBeTruthy()
+  // Echoed back because the web client picks its one translation channel
+  // from this field, not from its own local state — a contract two apps
+  // depend on, so it is pinned here rather than left to the schema.
+  expect(body.hearLang).toBe('en')
   // A guest gets a scoped token; the languages must be on the row, because
   // plan 06 rebuilds the channel set from the database, not from clients.
   expect(body.guestToken).toBeTruthy()
@@ -145,7 +149,8 @@ it('round-trips the floor sentinel as hearLang, not a language code', async () =
   })
 
   expect(res.statusCode).toBe(200)
-  const { participantId } = res.json()
+  const { participantId, hearLang } = res.json()
+  expect(hearLang).toBe('floor')
 
   const [row] = await db
     .select({ hearLang: participant.hearLang })

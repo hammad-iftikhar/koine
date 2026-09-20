@@ -143,6 +143,22 @@ only, push-to-talk turn-taking, or accepting a briefing-shaped product. All thre
 are product decisions, not engineering ones, and they must be raised rather than
 absorbed.
 
+### Measurement outcome
+
+The latency measurement was not run. The OpenAI API key was not available at implementation time, and real recorded Spanish speech fixtures were not sourced; synthesized speech would not reflect actual recognition latency and would flatter the performance of the recognition stage.
+
+The implementation therefore proceeds with the cascade pipeline. The plan is written for cascade; it produces the transcript that captions need anyway. This is a default chosen in the absence of a measurement, not a result of one.
+
+When the spike is finally run with a key and real fixtures, apply this decision rule:
+
+| p90 first byte | Decision |
+|---|---|
+| under 1.5 s | Proceed. Use whichever pipeline measured faster. |
+| 1.5 – 2.5 s | Proceed with the faster pipeline, note that the budget is tight. |
+| over 2.5 s | Stop and raise it. The options are captions-only, push-to-talk turn-taking, or accepting a briefing-shaped product. This is a product decision, not an engineering one. |
+
+Record the OpenAI models used (`OPENAI_STT_MODEL`, `OPENAI_TRANSLATE_MODEL`, `OPENAI_TTS_MODEL`) alongside the latency numbers when the measurement runs. Until then, the models in use are whatever those environment variables are set to.
+
 ## Mixing at the listener
 
 The listener hears the translated voice at full level with the original floor
@@ -182,6 +198,22 @@ falling back to another language — silence is honest, the wrong language is no
 not a layout accident: a translation you cannot audit is a translation you cannot
 trust, and it costs one line.
 
+### Open item — there are no interim results
+
+Nothing in the implementation ever emits one. The transcriber works in fixed
+four-second windows and hardcodes `final: true`, so every segment that reaches a
+client is a commit. The `final` field, `CaptionBox`'s `interim` prop and its
+italic styling are all present and all currently dead: no packet on the wire can
+set them.
+
+This is not a bug to fix in the caption path. Interim results require streaming
+STT — recognition that reports as it hears rather than once per window — which
+replaces the windowing in `audio.ts` and the request shape in `openai.ts`. It is
+a pipeline change, not a patch.
+
+Until it is done, "Captions show original above translation, updating on interim
+results" in *Done when* is met only in its first half.
+
 ## Failure behaviour
 
 | Failure | Behaviour |
@@ -192,6 +224,22 @@ trust, and it costs one line.
 | OpenAI rate limit | Back off, surface the degraded state, do not retry in a tight loop. |
 
 Translation is an enhancement layer. Its failure must never take down the call.
+
+### Open item — the degraded state is not visible
+
+Three rows of that table promise the user something: "Channel shows 'translation
+unavailable'", "Clients show the degraded state", "surface the degraded state".
+No client surface does any of this, and no task in the plan built one.
+
+The *behaviour* degrades correctly. When the channel stops — TTS failing, the
+spend ceiling tripping, the worker dying — the `tr:<lang>` track goes away, the
+floor un-ducks to full, and captions keep flowing. What is missing is that
+nothing tells the listener it happened. They hear the room switch back to a
+language they may not speak and are given no reason for it.
+
+The indicator is unbuilt. It needs a client-side state derived from the same
+place the ducking is — a translation channel that was expected and is not there
+— and a place to show it.
 
 ## Cost controls
 
@@ -226,6 +274,26 @@ subscriptions. Losing one must not lose the meeting.
 The gap is audible — a few seconds of untranslated floor audio. That is the
 correct trade: a meeting that continues imperfectly beats one that stalls waiting
 for recovery.
+
+### Open item — step 2 is assumed, not verified
+
+Of the four steps above, the rebuild is real and the re-dispatch is not.
+
+Step 3 is implemented and traceable: the channel set is derived from
+`participant.hear_lang` in Postgres on a timer and on every participant event, so
+a replacement worker reconstructs it from the database with no client
+cooperation. Steps 1 and 4 follow from the client's own subscription pass, which
+recomputes from the room's current state on every event rather than accumulating.
+
+Step 2 is taken on faith. This spec says to **verify LiveKit's actual re-dispatch
+behaviour on worker failure before relying on it**, and to register a Redis
+heartbeat per room and claim expired rooms if it does not happen automatically.
+Neither was done. Nothing in the implementation would notice a room that no
+worker picked up, and nothing would recover it.
+
+It cannot be settled by reading: it needs two live workers, a room in progress
+and a kill, which is a deployment exercise rather than a test. Until it is run,
+a worker loss is a permanent loss of translation for that room, not a gap.
 
 **Channel state in Redis**, keyed by room: the active channel set and the spend
 counter. This is recovery state, not a data store — it is rebuildable from

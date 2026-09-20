@@ -2,5 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  # Its install script is `node -e ""` — a no-op that only suppresses pnpm's
+  # implicit node-gyp rebuild; the real binaries arrive as per-platform
+  # optionalDependencies. The translation worker loads none of them.
+  '@livekit/local-inference': false
   esbuild: true
   lefthook: true
