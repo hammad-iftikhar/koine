@@ -69,6 +69,24 @@ it('one language failing does not stop the others', async () => {
   expect(h.publishAudio.mock.calls[0]?.[1]).toBe('ur')
 })
 
+it('a spend check that rejects does not synthesize and does not throw', async () => {
+  const h = harness()
+  h.spend.consume = vi.fn(async () => {
+    throw new Error('redis unreachable')
+  })
+  h.synth.attach('room-a')
+
+  // Publishing must not surface an unhandled rejection: the bus handler is
+  // fire-and-forget, so if synthesizeAll's rejection escaped uncaught, this
+  // would either throw here or produce an unhandledRejection on the process,
+  // which vitest would fail the test run for.
+  expect(() => h.bus.publish('room-a', segment({ en: 'Hello' }))).not.toThrow()
+  await new Promise((r) => setTimeout(r, 20))
+
+  expect(h.client.synthesize).not.toHaveBeenCalled()
+  expect(h.publishAudio).not.toHaveBeenCalled()
+})
+
 it('detaching stops further synthesis', async () => {
   const h = harness()
   const detach = h.synth.attach('room-a')

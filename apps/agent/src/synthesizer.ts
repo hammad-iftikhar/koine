@@ -14,14 +14,30 @@ export function createSynthesizer(deps: {
     /** Subscribes this room to the bus. Returns a detach function. */
     attach(roomId: string): () => void {
       return deps.bus.subscribe(roomId, (segment: CaptionSegment) => {
-        void synthesizeAll(segment)
+        // Fire-and-forget, but never fire-and-forget an unhandled rejection:
+        // that can take down the whole worker process, silencing every other
+        // room it serves. Catch belt-and-suspenders on top of the try/catch
+        // inside synthesizeAll, in case a future edit adds an awaited call
+        // above it that can throw.
+        void synthesizeAll(segment).catch((error) => {
+          console.error(`synthesizer: unexpected failure in ${roomId}`, error)
+        })
       })
 
       async function synthesizeAll(segment: CaptionSegment) {
         const entries = Object.entries(segment.translations)
         if (entries.length === 0) return
 
-        const within = await deps.spend.consume(roomId, segment.original.length * entries.length)
+        let within: boolean
+        try {
+          within = await deps.spend.consume(roomId, segment.original.length * entries.length)
+        } catch (error) {
+          // Fail closed: a spend you cannot count is not a licence to spend.
+          // Captions keep flowing either way; the next segment retries once
+          // Redis recovers.
+          console.error(`synthesizer: spend check failed in ${roomId}`, error)
+          return
+        }
         if (!within) {
           // Captions keep flowing; only the voice stops. The room is told
           // by the client, which sees the tr: tracks end.
