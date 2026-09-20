@@ -2,7 +2,6 @@ name: ci
 
 on:
   push: { branches: [main] }
-  pull_request:
 
 jobs:
   build:
@@ -15,13 +14,13 @@ jobs:
           POSTGRES_USER: koine
           POSTGRES_PASSWORD: koine
           POSTGRES_DB: koine
-        ports: ['5432:5432']
+        ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U koine -d koine"
           --health-interval 5s --health-timeout 3s --health-retries 10
       redis:
         image: redis:7-alpine
-        ports: ['6379:6379']
+        ports: ["6379:6379"]
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 5s --health-timeout 3s --health-retries 10
