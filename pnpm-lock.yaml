@@ -72,6 +72,9 @@ importers:
       livekit-server-sdk:
         specifier: ^2.19.0
         version: 2.19.0
+      openai:
+        specifier: ^7.19.0
+        version: 7.19.0(undici@8.10.2)(ws@8.21.3)(zod@4.6.5)
       postgres:
         specifier: ^3.4.9
         version: 3.4.9
