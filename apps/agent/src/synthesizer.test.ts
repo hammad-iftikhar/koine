@@ -21,8 +21,9 @@ function harness(over: { allowed?: boolean } = {}) {
   }
   const publishAudio = vi.fn(async (_audio: Buffer, _lang: string, _roomId: string) => {})
   const spend = { consume: vi.fn(async () => over.allowed ?? true) }
-  const synth = createSynthesizer({ client, bus, publishAudio, spend })
-  return { bus, client, publishAudio, spend, synth }
+  const endChannels = vi.fn(async (_roomId: string) => {})
+  const synth = createSynthesizer({ client, bus, publishAudio, spend, endChannels })
+  return { bus, client, publishAudio, spend, endChannels, synth }
 }
 
 it('publishes one track per translated language', async () => {
@@ -95,4 +96,53 @@ it('detaching stops further synthesis', async () => {
   h.bus.publish('room-a', segment({ en: 'Hello' }))
   await new Promise((r) => setTimeout(r, 20))
   expect(h.client.synthesize).not.toHaveBeenCalled()
+})
+
+it("ends the room's translation channels once when the ceiling trips", async () => {
+  // A published but silent tr: track fires no LiveKit event, so the client
+  // would duck the floor forever under a channel that will never speak again.
+  const h = harness({ allowed: false })
+  h.synth.attach('room-a')
+
+  h.bus.publish('room-a', segment({ en: 'Hello' }))
+  await vi.waitFor(() => expect(h.endChannels).toHaveBeenCalledTimes(1))
+  expect(h.endChannels).toHaveBeenCalledWith('room-a')
+
+  h.bus.publish('room-a', segment({ en: 'Hello again' }))
+  await new Promise((r) => setTimeout(r, 20))
+  expect(h.endChannels).toHaveBeenCalledTimes(1)
+})
+
+it('leaves the channels published while the room is within its ceiling', async () => {
+  const h = harness()
+  h.synth.attach('room-a')
+
+  h.bus.publish('room-a', segment({ en: 'Hello' }))
+  await vi.waitFor(() => expect(h.publishAudio).toHaveBeenCalledTimes(1))
+  expect(h.endChannels).not.toHaveBeenCalled()
+})
+
+it('leaves the channels published when the spend check itself fails', async () => {
+  // Uncountable spend is not a reached ceiling: Redis recovers, and nothing
+  // here republishes a track that was torn down.
+  const h = harness()
+  h.spend.consume = vi.fn(async () => {
+    throw new Error('redis unreachable')
+  })
+  h.synth.attach('room-a')
+
+  h.bus.publish('room-a', segment({ en: 'Hello' }))
+  await new Promise((r) => setTimeout(r, 20))
+
+  expect(h.endChannels).not.toHaveBeenCalled()
+})
+
+it('a failing endChannels is logged, not thrown', async () => {
+  const h = harness({ allowed: false })
+  h.endChannels.mockRejectedValueOnce(new Error('livekit gone'))
+  h.synth.attach('room-a')
+
+  expect(() => h.bus.publish('room-a', segment({ en: 'Hello' }))).not.toThrow()
+  await new Promise((r) => setTimeout(r, 20))
+  expect(h.endChannels).toHaveBeenCalledTimes(1)
 })

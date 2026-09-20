@@ -101,6 +101,8 @@ export default defineAgent({
       bus,
       spend,
       publishAudio: (audio, lang) => tracks.publish(audio, lang),
+      // The ceiling is per meeting, so all of the room's languages go at once.
+      endChannels: () => tracks.close(),
     })
     const ingest = createIngest({
       loadRoster,
