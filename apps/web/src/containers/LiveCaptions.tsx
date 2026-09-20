@@ -1,28 +1,22 @@
-import { CaptionSegment, languageLabel } from '@koine/shared'
+import type { CaptionSegment } from '@koine/shared'
+import { languageLabel } from '@koine/shared'
 import { useRoomContext } from '@livekit/components-react'
-import { RoomEvent } from 'livekit-client'
+import { type RemoteParticipant, RoomEvent } from 'livekit-client'
 import { useEffect, useState } from 'react'
-import { CaptionBox } from '../components/CaptionBox'
+import { CAPTION_DOCK, CaptionBox } from '../components/CaptionBox'
+import { decodeCaption } from '../lib/captions'
 
 export function LiveCaptions({ hearLang, enabled }: { hearLang: string; enabled: boolean }) {
   const room = useRoomContext()
   const [segment, setSegment] = useState<CaptionSegment>()
 
   useEffect(() => {
-    const onData = (payload: Uint8Array) => {
-      // Untrusted input off the wire. A malformed packet must not blank the
-      // captions or crash the room — and `safeParse` alone is not enough,
-      // because `JSON.parse` throws on bytes that are not JSON at all and
-      // this callback runs inside LiveKit's own event emitter. Anything that
-      // is not a CaptionSegment (a chat packet, a truncated frame) is
-      // dropped, leaving the last good caption on screen.
-      let parsed: ReturnType<typeof CaptionSegment.safeParse>
-      try {
-        parsed = CaptionSegment.safeParse(JSON.parse(new TextDecoder().decode(payload)))
-      } catch {
-        return
-      }
-      if (parsed.success) setSegment(parsed.data)
+    // `dataReceived` hands the sending participant along with the payload —
+    // undefined only when the packet came from the server itself. The whole
+    // accept/refuse decision, sender included, lives in `decodeCaption`.
+    const onData = (payload: Uint8Array, participant?: RemoteParticipant) => {
+      const next = decodeCaption(payload, participant)
+      if (next) setSegment(next)
     }
     room.on(RoomEvent.DataReceived, onData)
     return () => {
@@ -39,7 +33,7 @@ export function LiveCaptions({ hearLang, enabled }: { hearLang: string; enabled:
     room.getParticipantByIdentity?.(segment.speakerIdentity)?.name ?? segment.speakerIdentity
 
   return (
-    <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2">
+    <div className={CAPTION_DOCK}>
       <CaptionBox
         speaker={speaker}
         original={segment.original}

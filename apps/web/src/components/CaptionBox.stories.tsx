@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { CaptionBox } from './CaptionBox'
+import { CAPTION_DOCK, CaptionBox } from './CaptionBox'
 
 const meta: Meta<typeof CaptionBox> = {
   title: 'Room/CaptionBox',
@@ -55,5 +55,32 @@ export const LongLine: Story = {
     // Text that outgrows its track must wrap, not clip.
     const box = within(canvasElement).getByTestId('caption-box')
     await expect(box.scrollWidth).toBeLessThanOrEqual(box.clientWidth + 1)
+  },
+}
+
+export const Docked: Story = {
+  args: {
+    original:
+      'Creo que deberíamos posponer la vista de reportes hasta el próximo ciclo, porque el equipo no va a terminar a tiempo.',
+    translated:
+      'I think we should postpone the reporting view until the next cycle, because the team will not finish in time.',
+  },
+  // The stage `LiveCaptions` renders into, at a width where the box should be
+  // at its full 640px. The dock is imported rather than retyped so this
+  // measures the real one.
+  render: (args) => (
+    <div className="relative h-[220px] w-[800px] bg-ink">
+      <div className={CAPTION_DOCK}>
+        <CaptionBox {...args} />
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    // `w-[min(640px,92%)]` resolves its percentage against whatever the dock
+    // leaves it. Shrink-to-fit plus `left-1/2` left it 92% of half the stage,
+    // so a long caption wrapped into a narrow column and could never reach
+    // 640px however wide the room got.
+    const box = within(canvasElement).getByTestId('caption-box')
+    await expect(Math.round(box.getBoundingClientRect().width)).toBe(640)
   },
 }
