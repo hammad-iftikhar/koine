@@ -50,7 +50,11 @@ export function RoomConnection({
         // Small tiles do not need full resolution, and on self-hosted
         // infrastructure the egress saving is ours to keep.
         publishDefaults: { simulcast: true },
-        adaptiveStream: true,
+        // pixelDensity 'screen', not the default: the default only counts
+        // device pixels when devicePixelRatio > 2, so every retina laptop
+        // (ratio exactly 2) asked for a tile's CSS width and got a stream at
+        // half the resolution its display was actually showing.
+        adaptiveStream: { pixelDensity: 'screen' },
         dynacast: true,
       }}
     >

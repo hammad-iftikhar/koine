@@ -1,6 +1,7 @@
+import type { Track } from 'livekit-client'
 import { useVideoStream } from '@/lib/useVideoStream'
 
-export type ScreenShareTileProps = { presenterName: string; stream?: MediaStream }
+export type ScreenShareTileProps = { presenterName: string; stream?: MediaStream | Track }
 
 export function ScreenShareTile({ presenterName, stream }: ScreenShareTileProps) {
   const video = useVideoStream(stream)

@@ -5,19 +5,6 @@ import { ScreenShareTile } from '@/components/ScreenShareTile'
 import { type GridEntry, orderTiles } from '@/lib/grid'
 import { withoutAgents } from '@/lib/participants'
 
-// One MediaStream per track. Rebuilding it each render hands <video> a new
-// object identity, so the ref callback reassigns srcObject on every tick.
-const streams = new WeakMap<MediaStreamTrack, MediaStream>()
-
-function streamOf(track: MediaStreamTrack | undefined): MediaStream | undefined {
-  if (!track) return undefined
-  const cached = streams.get(track)
-  if (cached) return cached
-  const made = new MediaStream([track])
-  streams.set(track, made)
-  return made
-}
-
 export function RoomGrid() {
   // Filtered once, at the source: the translation worker is a real LiveKit
   // participant (it has to be, or nobody could subscribe to its tracks), and
@@ -41,15 +28,17 @@ export function RoomGrid() {
 
   const { visible, overflow } = orderTiles(entries, share ? 4 : 9)
 
-  const streamFor = (identity: string) => {
-    const pub = cameraTracks.find((t) => t.participant.identity === identity)
-    return streamOf(pub?.publication?.track?.mediaStreamTrack)
-  }
+  // The LiveKit Track itself, not its raw MediaStreamTrack: the tile attaches
+  // it so adaptive stream can see how big the tile actually is. Reading
+  // `mediaStreamTrack` and wrapping it in our own MediaStream skipped that,
+  // and every remote tile got served the publisher's smallest layer.
+  const trackFor = (identity: string) =>
+    cameraTracks.find((t) => t.participant.identity === identity)?.publication?.track
 
   const mutedFor = (identity: string) =>
     !participants.find((p) => p.identity === identity)?.isMicrophoneEnabled
 
-  // Not `!streamFor(identity)`: turning the camera off mutes the track, it does
+  // Not `!trackFor(identity)`: turning the camera off mutes the track, it does
   // not unpublish it, so the publication and its MediaStream survive and the
   // tile would keep showing the last frame the track produced before mute
   // stopped it. `isCameraEnabled` is `!(pub?.isMuted ?? true)`, exactly the
@@ -64,7 +53,7 @@ export function RoomGrid() {
         <div className="md:col-span-2">
           <ScreenShareTile
             presenterName={share.participant.name || share.participant.identity}
-            stream={streamOf(share.publication?.track?.mediaStreamTrack)}
+            stream={share.publication?.track}
           />
         </div>
       )}
@@ -76,7 +65,7 @@ export function RoomGrid() {
           speaking={entry.speaking}
           muted={mutedFor(entry.identity)}
           cameraOff={cameraOffFor(entry.identity)}
-          stream={streamFor(entry.identity)}
+          stream={trackFor(entry.identity)}
           isSelf={entry.isSelf}
         />
       ))}

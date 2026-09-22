@@ -1,3 +1,4 @@
+import type { Track } from 'livekit-client'
 import { MicOff } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useVideoStream } from '@/lib/useVideoStream'
@@ -8,7 +9,7 @@ export type ParticipantTileProps = {
   speaking?: boolean
   muted?: boolean
   cameraOff?: boolean
-  stream?: MediaStream
+  stream?: MediaStream | Track
   isSelf?: boolean
 }
 
