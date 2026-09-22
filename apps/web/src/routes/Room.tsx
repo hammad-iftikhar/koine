@@ -55,7 +55,7 @@ export function Room() {
             <LiveCaptions hearLang={hearLang} enabled={captions} />
           </div>
           {panel === 'chat' && (
-            <div className="w-[340px] shrink-0">
+            <div className="w-85 shrink-0">
               <RoomChat
                 code={code}
                 participantId={participantId}

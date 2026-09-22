@@ -26,7 +26,7 @@ export function Home() {
   }
 
   return (
-    <main className="mx-auto flex max-w-[1180px] flex-col gap-8 px-6 py-16">
+    <main className="mx-auto flex max-w-295 flex-col gap-8 px-6 py-16">
       <h1 className="m-0 max-w-[18ch] text-[clamp(32px,4.4vw,46px)] font-semibold leading-[1.08] tracking-[-0.035em]">
         Meetings where nobody switches languages.
       </h1>
