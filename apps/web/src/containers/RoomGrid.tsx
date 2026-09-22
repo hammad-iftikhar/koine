@@ -82,7 +82,7 @@ export function RoomGrid() {
       ))}
 
       {overflow > 0 && (
-        <div className="grid place-items-center rounded-[18px] border border-[var(--edge)] bg-[var(--pane)] text-fg-2">
+        <div className="grid place-items-center rounded-[18px] border border-(--edge) bg-(--pane) text-fg-2">
           +{overflow} more
         </div>
       )}

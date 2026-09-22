@@ -29,7 +29,7 @@ export function ConnectionBanner() {
   return (
     <div
       role="status"
-      className="absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-full border border-[var(--edge)] bg-black/70 px-4 py-2 text-[13px] backdrop-blur-[28px]"
+      className="absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-full border border-(--edge) bg-black/70 px-4 py-2 text-[13px] backdrop-blur-[28px]"
     >
       {message}
     </div>

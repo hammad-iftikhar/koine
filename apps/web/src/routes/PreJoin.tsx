@@ -97,7 +97,7 @@ export function PreJoin() {
         </p>
 
         {!user && (
-          <label className="w-full max-w-[320px] text-left">
+          <label className="w-full max-w-80 text-left">
             <span className="pl-0.5 text-[11.5px] text-fg-3">Your name</span>
             <input
               id="guest-name"
@@ -137,7 +137,7 @@ export function PreJoin() {
             )
             navigate(`/m/${code}`)
           }}
-          className="w-full max-w-[320px] rounded-full bg-blue px-5 py-3.5 font-semibold text-white disabled:opacity-60"
+          className="w-full max-w-80 rounded-full bg-blue px-5 py-3.5 font-semibold text-white disabled:opacity-60"
         >
           {join.isPending ? 'Joining…' : 'Join now'}
         </button>

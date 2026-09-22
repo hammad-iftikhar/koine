@@ -27,13 +27,13 @@ export function PanelToggles({ active, participantCount, onOpen }: PanelTogglesP
           aria-pressed={active === name}
           onClick={() => onOpen(name)}
           className={cn(
-            'relative grid h-[42px] w-[42px] place-items-center rounded-full text-fg-2 transition-colors hover:bg-[var(--pane-2)] hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue',
-            active === name && 'bg-[var(--pane-2)] text-blue',
+            'relative grid h-10.5 w-10.5 place-items-center rounded-full text-fg-2 transition-colors hover:bg-(--pane-2) hover:text-fg focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-blue',
+            active === name && 'bg-(--pane-2) text-blue',
           )}
         >
           <Icon size={19} aria-hidden="true" />
           {name === 'people' && (
-            <span className="absolute right-1 top-1 grid h-[15px] min-w-[15px] place-items-center rounded-full bg-blue px-[3px] text-[10px] text-ink">
+            <span className="absolute right-1 top-1 grid h-3.75 min-w-3.75 place-items-center rounded-full bg-blue px-0.75 text-[10px] text-ink">
               {participantCount}
             </span>
           )}
