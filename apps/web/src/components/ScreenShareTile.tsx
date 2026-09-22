@@ -1,4 +1,4 @@
-import { useVideoStream } from '../lib/useVideoStream'
+import { useVideoStream } from '@/lib/useVideoStream'
 
 export type ScreenShareTileProps = { presenterName: string; stream?: MediaStream }
 
@@ -8,7 +8,7 @@ export function ScreenShareTile({ presenterName, stream }: ScreenShareTileProps)
   return (
     <div
       data-testid="screen-share-tile"
-      className="relative h-full w-full overflow-hidden rounded-[18px] border border-[var(--edge)] bg-[var(--tile)]"
+      className="relative h-full w-full overflow-hidden rounded-[18px] border border-(--edge) bg-(--tile)"
     >
       {stream ? (
         <video ref={video} autoPlay playsInline muted className="h-full w-full object-contain" />

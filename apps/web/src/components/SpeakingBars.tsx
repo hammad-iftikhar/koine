@@ -11,12 +11,12 @@ export function SpeakingBars({ active }: { active: boolean }) {
       data-testid="speaking-bars"
       data-active={String(active)}
       aria-hidden="true"
-      className="inline-flex h-[11px] items-end gap-[2px] text-blue"
+      className="inline-flex h-2.75 items-end gap-0.5 text-blue"
     >
       {[0, 1, 2].map((i) => (
         <i
           key={i}
-          className="w-[2.5px] origin-bottom rounded-[2px] bg-current"
+          className="w-[2.5px] origin-bottom rounded-xs bg-current"
           style={{
             height: '100%',
             transform: active ? undefined : 'scaleY(0.2)',

@@ -3,9 +3,9 @@ import { useRoomContext } from '@livekit/components-react'
 import { type RemoteParticipant, RoomEvent } from 'livekit-client'
 import { AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ChatPanel } from '../components/ChatPanel'
-import { apiFetch } from '../lib/api'
-import { decodeChatMessage } from '../lib/chat-messages'
+import { ChatPanel } from '@/components/ChatPanel'
+import { apiFetch } from '@/lib/api'
+import { decodeChatMessage } from '@/lib/chat-messages'
 
 const CHAT_TOPIC = 'chat'
 
@@ -187,7 +187,7 @@ export function RoomChat({
       {failedSend && (
         <div
           role="alert"
-          className="flex items-center gap-2 rounded-[14px] border border-[var(--edge)] bg-[var(--well)] px-3 py-2 text-[12.5px] text-fg-2"
+          className="flex items-center gap-2 rounded-[14px] border border-(--edge) bg-(--well) px-3 py-2 text-[12.5px] text-fg-2"
         >
           <AlertTriangle size={14} className="shrink-0 text-amber" aria-hidden="true" />
           <span className="min-w-0 flex-1 truncate">Message not sent: "{failedSend}"</span>
@@ -203,7 +203,7 @@ export function RoomChat({
               setRetrying(true)
               void send(failedSend).finally(() => setRetrying(false))
             }}
-            className="shrink-0 rounded-full border border-[var(--edge)] px-2.5 py-1 text-[12px] font-medium text-blue transition-colors hover:bg-blue/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-60"
+            className="shrink-0 rounded-full border border-(--edge) px-2.5 py-1 text-[12px] font-medium text-blue transition-colors hover:bg-blue/15 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-60"
           >
             Retry
           </button>

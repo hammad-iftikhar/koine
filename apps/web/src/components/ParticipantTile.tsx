@@ -1,6 +1,6 @@
 import { MicOff } from 'lucide-react'
-import { cn } from '../lib/cn'
-import { useVideoStream } from '../lib/useVideoStream'
+import { cn } from '@/lib/cn'
+import { useVideoStream } from '@/lib/useVideoStream'
 import { SpeakingBars } from './SpeakingBars'
 
 export type ParticipantTileProps = {
@@ -32,10 +32,10 @@ export function ParticipantTile({
       data-testid="participant-tile"
       data-speaking={String(isSpeaking)}
       className={cn(
-        'relative grid h-full w-full place-items-center overflow-hidden rounded-[18px] border bg-[var(--tile)]',
+        'relative grid h-full w-full place-items-center overflow-hidden rounded-[18px] border bg-(--tile)',
         isSpeaking
           ? 'border-blue shadow-[0_0_0_1px_var(--blue),0_0_32px_-10px_var(--blue)]'
-          : 'border-[var(--edge)]',
+          : 'border-(--edge)',
       )}
     >
       {stream && !cameraOff ? (
@@ -55,7 +55,7 @@ export function ParticipantTile({
         </span>
       )}
 
-      <span className="glass-dark absolute bottom-2.5 left-2.5 flex items-center gap-[7px] rounded-full px-2.5 py-1 text-[12.5px] text-fg">
+      <span className="glass-dark absolute bottom-2.5 left-2.5 flex items-center gap-1.75 rounded-full px-2.5 py-1 text-[12.5px] text-fg">
         {isSpeaking && <SpeakingBars active />}
         {label}
       </span>

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { fakeStream } from '../../.storybook/fakeStream'
+import { fakeStream } from '@/lib/fakeStream'
 import { DevicePreview, type DevicePreviewProps } from './DevicePreview'
 
 /**

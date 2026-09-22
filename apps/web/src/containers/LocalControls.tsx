@@ -1,7 +1,7 @@
 import { useLocalParticipant, useRoomContext, useTracks } from '@livekit/components-react'
 import { type Room, Track } from 'livekit-client'
 import { useState } from 'react'
-import { ControlBar } from '../components/ControlBar'
+import { ControlBar } from '@/components/ControlBar'
 
 export function LocalControls({
   micOn,

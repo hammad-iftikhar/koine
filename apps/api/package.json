@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "test": "vitest run",
-    "test:setup": "tsx src/test/ensure-template.ts",
+    "test:setup": "tsx tests/helpers/ensure-template.ts",
     "db:generate": "drizzle-kit generate --config ../../drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config ../../drizzle.config.ts"
   },

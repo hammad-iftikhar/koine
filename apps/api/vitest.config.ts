@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['tests/**/*.test.ts'],
     // vitest loads no .env, and the modules under test (db client, auth) throw
     // at import time when their env vars are unset. These defaults let
     // `pnpm --filter @koine/api test` run with no shell env configured.

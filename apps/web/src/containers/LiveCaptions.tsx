@@ -3,8 +3,8 @@ import { languageLabel } from '@koine/shared'
 import { useRoomContext } from '@livekit/components-react'
 import { type RemoteParticipant, RoomEvent } from 'livekit-client'
 import { useEffect, useState } from 'react'
-import { CAPTION_DOCK, CaptionBox } from '../components/CaptionBox'
-import { decodeCaption } from '../lib/captions'
+import { CAPTION_DOCK, CaptionBox } from '@/components/CaptionBox'
+import { decodeCaption } from '@/lib/captions'
 
 export function LiveCaptions({ hearLang, enabled }: { hearLang: string; enabled: boolean }) {
   const room = useRoomContext()

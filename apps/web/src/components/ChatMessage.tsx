@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react'
-import { cn } from '../lib/cn'
+import { cn } from '@/lib/cn'
 
 export type ChatMessageProps = {
   author: string
@@ -32,7 +32,7 @@ export function ChatMessage({
     <div
       data-testid="chat-message"
       data-own={String(own)}
-      className={cn('flex flex-col gap-[3px]', own ? 'items-end' : 'items-start')}
+      className={cn('flex flex-col gap-0.75', own ? 'items-end' : 'items-start')}
     >
       <div className="flex items-baseline gap-2">
         <b className="text-[13px] font-semibold">{author}</b>
@@ -41,10 +41,10 @@ export function ChatMessage({
       <div
         data-testid="message-bubble"
         className={cn(
-          'max-w-[85%] break-words rounded-[14px] border px-3 py-2 text-[13.5px]',
+          'max-w-[85%] wrap-break-word rounded-[14px] border px-3 py-2 text-[13.5px]',
           own
-            ? 'rounded-br-[4px] border-white/25 bg-blue text-ink'
-            : 'rounded-bl-[4px] border-[var(--edge)] bg-[var(--pane)] text-fg-2',
+            ? 'rounded-br-sm border-white/25 bg-blue text-ink'
+            : 'rounded-bl-sm border-(--edge) bg-(--pane) text-fg-2',
         )}
       >
         <p className="m-0">{body}</p>

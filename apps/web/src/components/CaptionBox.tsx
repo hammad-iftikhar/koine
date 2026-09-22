@@ -1,5 +1,5 @@
 import { Globe } from 'lucide-react'
-import { cn } from '../lib/cn'
+import { cn } from '@/lib/cn'
 
 /**
  * Where the caption box sits on the stage.
@@ -49,7 +49,7 @@ export function CaptionBox({
       aria-label="Live caption"
       aria-live="polite"
       aria-atomic="true"
-      className="glass-dark mx-auto w-[min(640px,92%)] rounded-[18px] px-[18px] py-3.5"
+      className="glass-dark mx-auto w-[min(640px,92%)] rounded-[18px] px-4.5 py-3.5"
     >
       <div className="mb-1.5 flex items-center gap-2 text-[11.5px] text-fg-2">
         <Globe size={14} aria-hidden="true" />
@@ -58,16 +58,16 @@ export function CaptionBox({
       </div>
       <p
         className={cn(
-          'm-0 mb-1 break-words text-[13px] text-fg-2',
-          interim && 'italic opacity-[85%]',
+          'm-0 mb-1 wrap-break-word text-[13px] text-fg-2',
+          interim && 'italic opacity-85',
         )}
       >
         {original}
       </p>
       <p
         className={cn(
-          'm-0 break-words text-base leading-[1.4] text-fg',
-          interim && 'italic opacity-[85%]',
+          'm-0 wrap-break-word text-base leading-[1.4] text-fg',
+          interim && 'italic opacity-85',
         )}
       >
         {translated}

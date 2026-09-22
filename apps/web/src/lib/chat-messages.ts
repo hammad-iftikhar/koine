@@ -14,7 +14,7 @@ export type ChatSender = { identity: string }
  * person for the rest of the call.
  *
  * The join route mints the LiveKit identity as the participant id (see
- * `apps/api/src/routes/meetings.ts`), so the check is exact rather than
+ * `apps/api/src/modules/meeting/meeting.controller.ts`), so the check is exact rather than
  * heuristic: a packet is accepted only when the identity LiveKit attaches to
  * the data event matches the `participantId` inside the payload itself. A
  * packet with no sender (server-originated) is refused for the same reason

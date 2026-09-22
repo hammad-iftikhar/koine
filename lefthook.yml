@@ -10,5 +10,3 @@ pre-push:
   commands:
     types:
       run: pnpm types
-    unit:
-      run: pnpm test

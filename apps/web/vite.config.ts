@@ -13,6 +13,12 @@ const dirname =
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@': path.join(dirname, 'src'),
+      '@tests': path.join(dirname, 'tests'),
+    },
+  },
   server: {
     port: 5173,
     host: true,
@@ -20,10 +26,19 @@ export default defineConfig({
   test: {
     projects: [
       {
+        // A vitest project is its own vite config: the root `resolve.alias`
+        // above does not reach it, so `@/` is repeated here or every test
+        // importing `@/lib/...` fails to resolve.
+        resolve: {
+          alias: {
+            '@': path.join(dirname, 'src'),
+            '@tests': path.join(dirname, 'tests'),
+          },
+        },
         test: {
           name: 'unit',
           environment: 'node',
-          include: ['src/**/*.test.ts'],
+          include: ['tests/**/*.test.ts'],
         },
       },
       {

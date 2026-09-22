@@ -1,11 +1,11 @@
 import cors from '@fastify/cors'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { auth as defaultAuth, toHeaders } from './auth'
+import { healthRoutes } from './modules/health/health.route'
+import { meRoutes } from './modules/me/me.route'
+import { meetingRoutes } from './modules/meeting/meeting.route'
+import { messageRoutes } from './modules/message/message.route'
 import { webOrigins } from './origins'
-import { healthRoutes } from './routes/health'
-import { meRoutes } from './routes/me'
-import { meetingRoutes } from './routes/meetings'
-import { messageRoutes } from './routes/messages'
 
 /**
  * Builds the app without listening, so tests can use app.inject().

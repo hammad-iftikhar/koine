@@ -69,7 +69,7 @@ export const Docked: Story = {
   // at its full 640px. The dock is imported rather than retyped so this
   // measures the real one.
   render: (args) => (
-    <div className="relative h-[220px] w-[800px] bg-ink">
+    <div className="relative h-55 w-200 bg-ink">
       <div className={CAPTION_DOCK}>
         <CaptionBox {...args} />
       </div>

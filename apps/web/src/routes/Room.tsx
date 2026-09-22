@@ -1,17 +1,17 @@
 import { JoinResponse, normalizeMeetingCode } from '@koine/shared'
 import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router'
-import { MeetingInfoBar } from '../components/MeetingInfoBar'
-import { type PanelName, PanelToggles } from '../components/PanelToggles'
-import { ConnectionBanner } from '../containers/ConnectionBanner'
-import { LiveCaptions } from '../containers/LiveCaptions'
-import { LocalControls } from '../containers/LocalControls'
-import { RoomChat } from '../containers/RoomChat'
-import { RoomConnection } from '../containers/RoomConnection'
-import { RoomGrid } from '../containers/RoomGrid'
-import { TranslationAudio } from '../containers/TranslationAudio'
-import { useElapsed } from '../lib/useElapsed'
-import { useLocalDevices } from '../lib/useLocalDevices'
+import { MeetingInfoBar } from '@/components/MeetingInfoBar'
+import { type PanelName, PanelToggles } from '@/components/PanelToggles'
+import { ConnectionBanner } from '@/containers/ConnectionBanner'
+import { LiveCaptions } from '@/containers/LiveCaptions'
+import { LocalControls } from '@/containers/LocalControls'
+import { RoomChat } from '@/containers/RoomChat'
+import { RoomConnection } from '@/containers/RoomConnection'
+import { RoomGrid } from '@/containers/RoomGrid'
+import { TranslationAudio } from '@/containers/TranslationAudio'
+import { useElapsed } from '@/lib/useElapsed'
+import { useLocalDevices } from '@/lib/useLocalDevices'
 
 export function Room() {
   const { code = '' } = useParams()
@@ -55,7 +55,7 @@ export function Room() {
             <LiveCaptions hearLang={hearLang} enabled={captions} />
           </div>
           {panel === 'chat' && (
-            <div className="w-[340px] shrink-0">
+            <div className="w-85 shrink-0">
               <RoomChat
                 code={code}
                 participantId={participantId}

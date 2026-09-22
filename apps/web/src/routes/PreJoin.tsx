@@ -1,11 +1,11 @@
 import { FLOOR, type LanguageCode, normalizeMeetingCode } from '@koine/shared'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { DevicePreview } from '../components/DevicePreview'
-import { LanguagePicker } from '../components/LanguagePicker'
-import { ApiError } from '../lib/api'
-import { useMe } from '../lib/auth'
-import { useJoinMeeting, useMeeting } from '../lib/meetings'
+import { DevicePreview } from '@/components/DevicePreview'
+import { LanguagePicker } from '@/components/LanguagePicker'
+import { ApiError } from '@/lib/api'
+import { useMe } from '@/lib/auth'
+import { useJoinMeeting, useMeeting } from '@/lib/meetings'
 
 export function PreJoin() {
   const { code = '' } = useParams()
@@ -52,7 +52,7 @@ export function PreJoin() {
   if (meeting.isError) {
     const notFound = meeting.error instanceof ApiError && meeting.error.status === 404
     return (
-      <main className="mx-auto max-w-[520px] px-6 py-16 text-center">
+      <main className="mx-auto max-w-130 px-6 py-16 text-center">
         <h1 className="text-2xl font-semibold">
           {notFound ? 'Meeting not found' : "Couldn't load this meeting"}
         </h1>
@@ -68,7 +68,7 @@ export function PreJoin() {
   const others = meeting.data?.participants ?? []
 
   return (
-    <main className="mx-auto grid max-w-[1180px] items-center gap-8 px-6 py-10 lg:grid-cols-[1.35fr_0.65fr]">
+    <main className="mx-auto grid max-w-295 items-center gap-8 px-6 py-10 lg:grid-cols-[1.35fr_0.65fr]">
       <DevicePreview
         stream={stream}
         micOn={micOn}
@@ -89,7 +89,7 @@ export function PreJoin() {
       />
 
       <div className="flex flex-col items-center gap-3.5 text-center">
-        <h2 className="m-0 text-2xl font-semibold tracking-[-0.025em]">Ready to join?</h2>
+        <h2 className="m-0 text-2xl font-semibold tracking-tight">Ready to join?</h2>
         <p className="m-0 text-[14px] text-fg-2">
           {others.length === 0
             ? 'No one else is here yet.'
@@ -97,14 +97,14 @@ export function PreJoin() {
         </p>
 
         {!user && (
-          <label className="w-full max-w-[320px] text-left">
+          <label className="w-full max-w-80 text-left">
             <span className="pl-0.5 text-[11.5px] text-fg-3">Your name</span>
             <input
               id="guest-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="How should people see you?"
-              className="mt-1.5 w-full rounded-[12px] border border-[var(--edge)] bg-[var(--well)] px-3 py-2.5 text-[13.5px] outline-none focus:border-blue"
+              className="mt-1.5 w-full rounded-xl border border-(--edge) bg-(--well) px-3 py-2.5 text-[13.5px] outline-none focus:border-blue"
             />
           </label>
         )}
@@ -137,7 +137,7 @@ export function PreJoin() {
             )
             navigate(`/m/${code}`)
           }}
-          className="w-full max-w-[320px] rounded-full bg-blue px-5 py-3.5 font-semibold text-white disabled:opacity-60"
+          className="w-full max-w-80 rounded-full bg-blue px-5 py-3.5 font-semibold text-white disabled:opacity-60"
         >
           {join.isPending ? 'Joining…' : 'Join now'}
         </button>

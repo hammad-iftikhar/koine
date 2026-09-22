@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { fakeStream } from '../../.storybook/fakeStream'
+import { fakeStream } from '@/lib/fakeStream'
 import { ScreenShareTile } from './ScreenShareTile'
 
 const meta: Meta<typeof ScreenShareTile> = {
